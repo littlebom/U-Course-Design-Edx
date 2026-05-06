@@ -1,0 +1,487 @@
+{
+  "course": {
+    "org": "ThaiMOOC",
+    "courseCode": "OCD101",
+    "run": "2026T1",
+    "displayName": "การออกแบบหลักสูตรออนไลน์",
+    "language": "th",
+    "start": "2026-06-01T00:00:00Z",
+    "selfPaced": true
+  },
+  "grading": {
+    "cutoffs": { "Pass": 0.7 },
+    "graders": [
+      { "type": "PreTest", "shortLabel": "PT", "minCount": 1, "dropCount": 0, "weight": 0.0 },
+      { "type": "Quiz", "shortLabel": "Qz", "minCount": 5, "dropCount": 0, "weight": 0.6 },
+      { "type": "FinalExam", "shortLabel": "FE", "minCount": 1, "dropCount": 0, "weight": 0.4 }
+    ]
+  },
+  "chapters": [
+    {
+      "displayName": "บทที่ 0 — แนะนำรายวิชา (30 นาที)",
+      "sequentials": [
+        {
+          "displayName": "ภาพรวมรายวิชา",
+          "verticals": [
+            {
+              "displayName": "ยินดีต้อนรับ",
+              "blocks": [
+                {
+                  "type": "html",
+                  "displayName": "เกี่ยวกับรายวิชา",
+                  "html": "<h2>การออกแบบหลักสูตรออนไลน์</h2><p>รายวิชานี้ออกแบบสำหรับครู อาจารย์ และนักออกแบบการเรียนรู้ที่ต้องการพัฒนาหลักสูตรออนไลน์อย่างเป็นระบบ ใช้เวลาเรียนทั้งสิ้นประมาณ <strong>5 ชั่วโมง</strong></p><h3>วัตถุประสงค์การเรียนรู้</h3><ul><li>เข้าใจหลักการออกแบบการเรียนรู้แบบ Backward Design</li><li>วิเคราะห์ผู้เรียนและบริบทการเรียนได้</li><li>เขียน Learning Outcome ตามหลัก Bloom's Taxonomy</li><li>ออกแบบกิจกรรมและการประเมินที่สอดคล้องกัน (Constructive Alignment)</li><li>เลือกใช้สื่อและเทคโนโลยีที่เหมาะสม</li></ul>"
+                },
+                {
+                  "type": "html",
+                  "displayName": "วิธีการเรียนและการวัดผล",
+                  "html": "<h3>การวัดผล</h3><table border=\"1\" cellpadding=\"6\" style=\"border-collapse:collapse\"><tr><th>องค์ประกอบ</th><th>น้ำหนัก</th></tr><tr><td>Pre-Test</td><td>0% (ไม่นับคะแนน)</td></tr><tr><td>แบบทดสอบท้ายบท (Quiz)</td><td>60%</td></tr><tr><td>Final Exam</td><td>40%</td></tr></table><p>เกณฑ์ผ่าน: <strong>70%</strong> ขึ้นไป</p>"
+                }
+              ]
+            },
+            {
+              "displayName": "Pre-Test",
+              "blocks": [
+                {
+                  "type": "problem",
+                  "displayName": "Pre-Test ข้อที่ 1",
+                  "problemType": "multiplechoice",
+                  "question": "<p>การออกแบบหลักสูตรแบบ Backward Design เริ่มจากขั้นตอนใด?</p>",
+                  "choices": [
+                    { "text": "เลือกสื่อการสอน", "correct": false },
+                    { "text": "กำหนดผลลัพธ์การเรียนรู้ที่คาดหวัง", "correct": true },
+                    { "text": "เขียนแผนการสอนรายสัปดาห์", "correct": false },
+                    { "text": "สร้างแบบทดสอบ", "correct": false }
+                  ],
+                  "maxAttempts": 1,
+                  "showAnswer": "closed"
+                },
+                {
+                  "type": "problem",
+                  "displayName": "Pre-Test ข้อที่ 2",
+                  "problemType": "checkbox",
+                  "question": "<p>องค์ประกอบใดบ้างที่จัดอยู่ใน Constructive Alignment?</p>",
+                  "choices": [
+                    { "text": "Learning Outcomes", "correct": true },
+                    { "text": "Teaching & Learning Activities", "correct": true },
+                    { "text": "Assessment Tasks", "correct": true },
+                    { "text": "ราคาค่าลงทะเบียน", "correct": false }
+                  ],
+                  "maxAttempts": 1,
+                  "showAnswer": "closed"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "displayName": "บทที่ 1 — หลักการออกแบบการเรียนรู้ (1 ชั่วโมง)",
+      "sequentials": [
+        {
+          "displayName": "1.1 Backward Design",
+          "verticals": [
+            {
+              "displayName": "แนวคิด Backward Design",
+              "blocks": [
+                {
+                  "type": "html",
+                  "displayName": "Backward Design คืออะไร",
+                  "html": "<h3>Backward Design (Wiggins & McTighe)</h3><p>การออกแบบหลักสูตรแบบย้อนกลับ เริ่มจาก <em>ปลายทาง</em> ที่อยากให้ผู้เรียนทำได้ แล้วจึงย้อนมาออกแบบการประเมินและกิจกรรม</p><h4>3 ขั้นตอน</h4><ol><li><strong>Identify desired results</strong> — ผู้เรียนควรรู้/ทำอะไรได้</li><li><strong>Determine acceptable evidence</strong> — จะรู้ได้อย่างไรว่าผู้เรียนบรรลุเป้าหมาย</li><li><strong>Plan learning experiences</strong> — กิจกรรมและสื่อที่นำไปสู่เป้าหมาย</li></ol>"
+                },
+                {
+                  "type": "html",
+                  "displayName": "ตัวอย่างการประยุกต์",
+                  "html": "<h4>กรณีศึกษา: รายวิชา Python เบื้องต้น</h4><p><strong>เป้าหมาย:</strong> ผู้เรียนเขียนโปรแกรมแก้ปัญหาง่ายๆ ได้</p><p><strong>หลักฐาน:</strong> Mini-project ที่ใช้ loop, condition, function</p><p><strong>กิจกรรม:</strong> วิดีโอบรรยาย → แบบฝึก coding ในแต่ละบท → workshop กลุ่ม</p>"
+                }
+              ]
+            },
+            {
+              "displayName": "แบบฝึกหัด 1.1",
+              "blocks": [
+                {
+                  "type": "problem",
+                  "displayName": "Quiz 1.1.1",
+                  "problemType": "multiplechoice",
+                  "question": "<p>ขั้นตอนใดที่ไม่ใช่ส่วนหนึ่งของ Backward Design?</p>",
+                  "choices": [
+                    { "text": "กำหนดผลลัพธ์การเรียนรู้", "correct": false },
+                    { "text": "วางแผนกิจกรรมการเรียน", "correct": false },
+                    { "text": "เลือกหนังสือเรียนที่ใช้ในตลาด", "correct": true },
+                    { "text": "กำหนดหลักฐานการเรียนรู้", "correct": false }
+                  ],
+                  "maxAttempts": 2,
+                  "showAnswer": "closed"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "displayName": "1.2 ADDIE Model",
+          "verticals": [
+            {
+              "displayName": "5 ขั้นของ ADDIE",
+              "blocks": [
+                {
+                  "type": "html",
+                  "displayName": "ADDIE คืออะไร",
+                  "html": "<h3>ADDIE Model</h3><p>กรอบการพัฒนาหลักสูตรเชิงระบบที่ใช้กันแพร่หลายในวงการ Instructional Design</p><ol><li><strong>A</strong>nalysis — วิเคราะห์ผู้เรียน บริบท ความต้องการ</li><li><strong>D</strong>esign — ออกแบบ outcome, สื่อ, การประเมิน</li><li><strong>D</strong>evelopment — ผลิตเนื้อหา/สื่อจริง</li><li><strong>I</strong>mplementation — นำไปใช้สอน</li><li><strong>E</strong>valuation — ประเมินและปรับปรุง</li></ol>"
+                }
+              ]
+            },
+            {
+              "displayName": "แบบฝึกหัด 1.2",
+              "blocks": [
+                {
+                  "type": "problem",
+                  "displayName": "Quiz 1.2.1",
+                  "problemType": "checkbox",
+                  "question": "<p>ขั้นตอนใดของ ADDIE ที่เกี่ยวข้องกับการ <em>วิเคราะห์ผู้เรียน</em>?</p>",
+                  "choices": [
+                    { "text": "Analysis", "correct": true },
+                    { "text": "Design", "correct": false },
+                    { "text": "Development", "correct": false },
+                    { "text": "Evaluation", "correct": true }
+                  ],
+                  "maxAttempts": 2,
+                  "showAnswer": "closed"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "displayName": "บทที่ 2 — การวิเคราะห์ผู้เรียนและบริบท (1 ชั่วโมง)",
+      "sequentials": [
+        {
+          "displayName": "2.1 Learner Persona",
+          "verticals": [
+            {
+              "displayName": "การสร้าง Learner Persona",
+              "blocks": [
+                {
+                  "type": "html",
+                  "displayName": "ทำไมต้องสร้าง Persona",
+                  "html": "<h3>Learner Persona</h3><p>ตัวแทนสมมติของผู้เรียนกลุ่มเป้าหมาย ช่วยให้ทีมออกแบบ <em>เห็นภาพ</em> ผู้เรียนเป็นคน ไม่ใช่ตัวเลข</p><h4>องค์ประกอบสำคัญ</h4><ul><li>ข้อมูลพื้นฐาน (อายุ การศึกษา อาชีพ)</li><li>เป้าหมายในการเรียน</li><li>ความรู้พื้นฐานเดิม (prior knowledge)</li><li>สิ่งที่ทำให้เครียด/อุปสรรค (pain points)</li><li>อุปกรณ์/ช่องทางที่ใช้เรียน</li></ul>"
+                },
+                {
+                  "type": "html",
+                  "displayName": "ตัวอย่าง Persona",
+                  "html": "<div style=\"border:1px solid #ddd; padding:12px; border-radius:8px\"><h4>👩 ครูแนน อายุ 38 ปี</h4><p><strong>อาชีพ:</strong> ครูมัธยมต้น สอนคณิตศาสตร์<br><strong>เป้าหมาย:</strong> อยากออกแบบบทเรียนออนไลน์ใช้ในห้องเรียน hybrid<br><strong>ความท้าทาย:</strong> ไม่เคยใช้ LMS, มีเวลาจำกัด, นักเรียนสมาธิสั้น<br><strong>อุปกรณ์:</strong> notebook ที่โรงเรียน, มือถือที่บ้าน</p></div>"
+                }
+              ]
+            },
+            {
+              "displayName": "แบบฝึกหัด 2.1",
+              "blocks": [
+                {
+                  "type": "problem",
+                  "displayName": "Quiz 2.1.1",
+                  "problemType": "multiplechoice",
+                  "question": "<p>องค์ประกอบใดของ Learner Persona ที่สำคัญที่สุดต่อการออกแบบกิจกรรม?</p>",
+                  "choices": [
+                    { "text": "ส่วนสูง น้ำหนัก", "correct": false },
+                    { "text": "ความรู้พื้นฐานเดิมและเป้าหมายในการเรียน", "correct": true },
+                    { "text": "รสนิยมทางดนตรี", "correct": false },
+                    { "text": "สถานภาพสมรส", "correct": false }
+                  ],
+                  "maxAttempts": 2,
+                  "showAnswer": "closed"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "displayName": "2.2 Context Analysis",
+          "verticals": [
+            {
+              "displayName": "บริบทการเรียนออนไลน์",
+              "blocks": [
+                {
+                  "type": "html",
+                  "displayName": "Synchronous vs Asynchronous",
+                  "html": "<h3>รูปแบบการเรียนออนไลน์</h3><table border=\"1\" cellpadding=\"6\" style=\"border-collapse:collapse\"><tr><th></th><th>Synchronous (สด)</th><th>Asynchronous (ไม่สด)</th></tr><tr><td>เวลา</td><td>เรียนพร้อมกัน</td><td>เรียนเมื่อสะดวก</td></tr><tr><td>ปฏิสัมพันธ์</td><td>สูง โต้ตอบทันที</td><td>ผ่านฟอรัม/อีเมล</td></tr><tr><td>เหมาะกับ</td><td>discussion, lab</td><td>lecture, self-paced</td></tr></table>"
+                }
+              ]
+            },
+            {
+              "displayName": "แบบฝึกหัด 2.2",
+              "blocks": [
+                {
+                  "type": "problem",
+                  "displayName": "Quiz 2.2.1",
+                  "problemType": "checkbox",
+                  "question": "<p>การเรียนแบบ <strong>Asynchronous</strong> เหมาะกับสถานการณ์ใด?</p>",
+                  "choices": [
+                    { "text": "ผู้เรียนกระจายในหลาย time zone", "correct": true },
+                    { "text": "ต้องการ feedback ทันที", "correct": false },
+                    { "text": "ผู้เรียนมีเวลาเรียนไม่ตรงกัน", "correct": true },
+                    { "text": "เนื้อหาเป็นการบรรยายหลัก", "correct": true }
+                  ],
+                  "maxAttempts": 2,
+                  "showAnswer": "closed"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "displayName": "บทที่ 3 — การเขียน Learning Outcomes (1 ชั่วโมง)",
+      "sequentials": [
+        {
+          "displayName": "3.1 Bloom's Taxonomy",
+          "verticals": [
+            {
+              "displayName": "ระดับการเรียนรู้ทั้ง 6",
+              "blocks": [
+                {
+                  "type": "html",
+                  "displayName": "Bloom's Taxonomy (Revised)",
+                  "html": "<h3>ระดับการคิดทั้ง 6 (Revised Bloom's Taxonomy)</h3><ol><li><strong>Remember</strong> — จำ ระบุ ทบทวน</li><li><strong>Understand</strong> — อธิบาย สรุป</li><li><strong>Apply</strong> — ใช้ คำนวณ ทำตามขั้นตอน</li><li><strong>Analyze</strong> — แยกแยะ เปรียบเทียบ</li><li><strong>Evaluate</strong> — ตัดสิน วิจารณ์</li><li><strong>Create</strong> — ออกแบบ สร้างสรรค์</li></ol><p>คำกริยาที่ใช้เขียน LO ควรสะท้อน <em>พฤติกรรมที่วัดได้</em> เช่น <code>identify</code>, <code>compare</code>, <code>design</code></p>"
+                }
+              ]
+            },
+            {
+              "displayName": "แบบฝึกหัด 3.1",
+              "blocks": [
+                {
+                  "type": "problem",
+                  "displayName": "Quiz 3.1.1",
+                  "problemType": "multiplechoice",
+                  "question": "<p>คำกริยาใดอยู่ในระดับ <strong>Create</strong> ของ Bloom's Taxonomy?</p>",
+                  "choices": [
+                    { "text": "ระบุ (Identify)", "correct": false },
+                    { "text": "อธิบาย (Explain)", "correct": false },
+                    { "text": "เปรียบเทียบ (Compare)", "correct": false },
+                    { "text": "ออกแบบ (Design)", "correct": true }
+                  ],
+                  "maxAttempts": 2,
+                  "showAnswer": "closed"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "displayName": "3.2 SMART Learning Outcomes",
+          "verticals": [
+            {
+              "displayName": "หลัก SMART",
+              "blocks": [
+                {
+                  "type": "html",
+                  "displayName": "SMART คืออะไร",
+                  "html": "<h3>SMART Outcomes</h3><ul><li><strong>S</strong>pecific — เฉพาะเจาะจง</li><li><strong>M</strong>easurable — วัดได้</li><li><strong>A</strong>chievable — ทำได้จริง</li><li><strong>R</strong>elevant — เกี่ยวข้องกับเป้า</li><li><strong>T</strong>ime-bound — มีกรอบเวลา</li></ul><h4>ตัวอย่างที่ดี ❌ → ✅</h4><p>❌ <em>เข้าใจ Python</em></p><p>✅ <em>เขียนฟังก์ชัน Python ที่รับ list ของตัวเลขและคืนค่าเฉลี่ยได้ ภายใน 15 นาที</em></p>"
+                }
+              ]
+            },
+            {
+              "displayName": "แบบฝึกหัด 3.2",
+              "blocks": [
+                {
+                  "type": "problem",
+                  "displayName": "Quiz 3.2.1",
+                  "problemType": "checkbox",
+                  "question": "<p>Learning Outcome ใดเขียนตามหลัก SMART?</p>",
+                  "choices": [
+                    { "text": "ผู้เรียนสามารถสร้าง Mind Map สรุปบทที่ 3 ได้ภายใน 30 นาที", "correct": true },
+                    { "text": "ผู้เรียนเข้าใจหลักการเรียนรู้", "correct": false },
+                    { "text": "ผู้เรียนคำนวณค่าเฉลี่ยเลขคณิตของชุดข้อมูล 10 ตัวได้ถูกต้อง 80%", "correct": true },
+                    { "text": "ผู้เรียนรู้สึกสนุกกับการเรียน", "correct": false }
+                  ],
+                  "maxAttempts": 2,
+                  "showAnswer": "closed"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "displayName": "บทที่ 4 — การออกแบบกิจกรรมและการประเมิน (1 ชั่วโมง 30 นาที)",
+      "sequentials": [
+        {
+          "displayName": "4.1 รูปแบบกิจกรรมการเรียน",
+          "verticals": [
+            {
+              "displayName": "Active Learning ออนไลน์",
+              "blocks": [
+                {
+                  "type": "html",
+                  "displayName": "เทคนิค Active Learning",
+                  "html": "<h3>เทคนิค Active Learning ที่ใช้ออนไลน์ได้</h3><ul><li><strong>Think-Pair-Share</strong> — ใช้ห้อง breakout บน Zoom/Meet</li><li><strong>Polling/Quiz สั้นๆ</strong> — Mentimeter, Kahoot</li><li><strong>Case Study</strong> — อภิปรายในฟอรัม</li><li><strong>Project-Based Learning</strong> — งานกลุ่มยาวข้ามสัปดาห์</li><li><strong>Peer Review</strong> — ผู้เรียนประเมินกัน</li></ul>"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "displayName": "4.2 การออกแบบการประเมิน",
+          "verticals": [
+            {
+              "displayName": "Formative vs Summative",
+              "blocks": [
+                {
+                  "type": "html",
+                  "displayName": "เปรียบเทียบ 2 รูปแบบ",
+                  "html": "<table border=\"1\" cellpadding=\"6\" style=\"border-collapse:collapse\"><tr><th></th><th>Formative (ระหว่างเรียน)</th><th>Summative (สรุปผล)</th></tr><tr><td>วัตถุประสงค์</td><td>ให้ feedback ปรับปรุง</td><td>ตัดสินผลการเรียน</td></tr><tr><td>ตัวอย่าง</td><td>quiz สั้น, exit ticket</td><td>ข้อสอบปลายภาค, project</td></tr><tr><td>น้ำหนัก</td><td>ต่ำหรือไม่นับ</td><td>สูง</td></tr></table>"
+                },
+                {
+                  "type": "html",
+                  "displayName": "Rubric ที่ดี",
+                  "html": "<h3>การออกแบบ Rubric</h3><p><strong>Rubric</strong> = เกณฑ์การให้คะแนนที่โปร่งใส มีระดับคุณภาพชัดเจน</p><h4>องค์ประกอบ</h4><ol><li><strong>Criteria</strong> — มิติที่ประเมิน</li><li><strong>Levels</strong> — ระดับคุณภาพ (เช่น ดีเยี่ยม / ดี / พอใช้ / ปรับปรุง)</li><li><strong>Descriptors</strong> — คำอธิบายแต่ละระดับ</li></ol>"
+                }
+              ]
+            },
+            {
+              "displayName": "แบบฝึกหัด 4.2",
+              "blocks": [
+                {
+                  "type": "problem",
+                  "displayName": "Quiz 4.2.1",
+                  "problemType": "multiplechoice",
+                  "question": "<p>การประเมินใดเป็น <strong>Formative Assessment</strong>?</p>",
+                  "choices": [
+                    { "text": "ข้อสอบปลายภาค 100 คะแนน", "correct": false },
+                    { "text": "Exit ticket หลังจบบทเรียน 5 นาที", "correct": true },
+                    { "text": "Final project ส่งสัปดาห์สุดท้าย", "correct": false },
+                    { "text": "การสอบประมวลความรู้", "correct": false }
+                  ],
+                  "maxAttempts": 2,
+                  "showAnswer": "closed"
+                },
+                {
+                  "type": "problem",
+                  "displayName": "Quiz 4.2.2",
+                  "problemType": "checkbox",
+                  "question": "<p>Rubric ที่ดีควรมีองค์ประกอบใดบ้าง?</p>",
+                  "choices": [
+                    { "text": "Criteria ที่ระบุมิติชัดเจน", "correct": true },
+                    { "text": "ระดับคุณภาพหลายระดับ", "correct": true },
+                    { "text": "คำอธิบายแต่ละระดับโดยละเอียด", "correct": true },
+                    { "text": "ชื่อผู้สอนและตำแหน่ง", "correct": false }
+                  ],
+                  "maxAttempts": 2,
+                  "showAnswer": "closed"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "displayName": "บทที่ 5 — สื่อ เครื่องมือ และการนำไปใช้ (1 ชั่วโมง)",
+      "sequentials": [
+        {
+          "displayName": "5.1 การเลือกสื่อและเครื่องมือ",
+          "verticals": [
+            {
+              "displayName": "Multimedia Learning Principles",
+              "blocks": [
+                {
+                  "type": "html",
+                  "displayName": "หลัก Mayer 12 ข้อ",
+                  "html": "<h3>Mayer's Multimedia Learning Principles (สรุป)</h3><ul><li><strong>Coherence</strong> — ตัดสิ่งที่ไม่จำเป็นออก</li><li><strong>Signaling</strong> — เน้น keyword สำคัญ</li><li><strong>Redundancy</strong> — ไม่ใช้ข้อความซ้ำกับเสียง</li><li><strong>Spatial Contiguity</strong> — วางคำกับภาพไว้ใกล้กัน</li><li><strong>Segmenting</strong> — แบ่งเนื้อหาเป็นช่วงสั้น</li><li><strong>Pre-training</strong> — สอนคำศัพท์/concept ก่อน</li></ul>"
+                },
+                {
+                  "type": "html",
+                  "displayName": "เครื่องมือยอดนิยม",
+                  "html": "<h4>กลุ่มเครื่องมือ</h4><ul><li><strong>LMS</strong>: Open edX, Moodle, Canvas</li><li><strong>วิดีโอ</strong>: OBS Studio, Camtasia, Loom</li><li><strong>กราฟิก</strong>: Canva, Figma</li><li><strong>Interactive</strong>: H5P, Mentimeter</li><li><strong>Live Class</strong>: Zoom, Google Meet, MS Teams</li></ul>"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "displayName": "5.2 Final Exam",
+          "format": "FinalExam",
+          "verticals": [
+            {
+              "displayName": "ข้อสอบปลายภาค",
+              "blocks": [
+                {
+                  "type": "problem",
+                  "displayName": "Final Q1",
+                  "problemType": "multiplechoice",
+                  "question": "<p>หลักการใดของ Mayer ที่บอกว่า <em>ควรตัดสิ่งที่ไม่จำเป็นออก</em>?</p>",
+                  "choices": [
+                    { "text": "Coherence", "correct": true },
+                    { "text": "Signaling", "correct": false },
+                    { "text": "Redundancy", "correct": false },
+                    { "text": "Pre-training", "correct": false }
+                  ],
+                  "maxAttempts": 1,
+                  "showAnswer": "finished"
+                },
+                {
+                  "type": "problem",
+                  "displayName": "Final Q2",
+                  "problemType": "checkbox",
+                  "question": "<p>ขั้นตอนใดอยู่ใน Backward Design?</p>",
+                  "choices": [
+                    { "text": "Identify desired results", "correct": true },
+                    { "text": "Determine acceptable evidence", "correct": true },
+                    { "text": "Plan learning experiences", "correct": true },
+                    { "text": "Calculate course revenue", "correct": false }
+                  ],
+                  "maxAttempts": 1,
+                  "showAnswer": "finished"
+                },
+                {
+                  "type": "problem",
+                  "displayName": "Final Q3",
+                  "problemType": "multiplechoice",
+                  "question": "<p>Learning Outcome ข้อใดสอดคล้องกับหลัก SMART มากที่สุด?</p>",
+                  "choices": [
+                    { "text": "ผู้เรียนเข้าใจ Bloom's Taxonomy", "correct": false },
+                    { "text": "ผู้เรียนรู้วิธีออกแบบหลักสูตร", "correct": false },
+                    { "text": "ผู้เรียนเขียน Learning Outcome ที่ครบหลัก SMART ได้ 3 ข้อ ภายใน 20 นาที", "correct": true },
+                    { "text": "ผู้เรียนสนใจการศึกษา", "correct": false }
+                  ],
+                  "maxAttempts": 1,
+                  "showAnswer": "finished"
+                },
+                {
+                  "type": "problem",
+                  "displayName": "Final Q4",
+                  "problemType": "checkbox",
+                  "question": "<p>การประเมินใดถือเป็น Summative Assessment?</p>",
+                  "choices": [
+                    { "text": "ข้อสอบปลายภาค", "correct": true },
+                    { "text": "Final project", "correct": true },
+                    { "text": "Exit ticket หลังเรียน", "correct": false },
+                    { "text": "Capstone presentation", "correct": true }
+                  ],
+                  "maxAttempts": 1,
+                  "showAnswer": "finished"
+                },
+                {
+                  "type": "problem",
+                  "displayName": "Final Q5",
+                  "problemType": "multiplechoice",
+                  "question": "<p>ขั้นตอนใดของ ADDIE ที่ทำการ <em>ผลิตเนื้อหา/สื่อจริง</em>?</p>",
+                  "choices": [
+                    { "text": "Analysis", "correct": false },
+                    { "text": "Design", "correct": false },
+                    { "text": "Development", "correct": true },
+                    { "text": "Evaluation", "correct": false }
+                  ],
+                  "maxAttempts": 1,
+                  "showAnswer": "finished"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

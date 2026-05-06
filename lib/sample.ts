@@ -1,0 +1,75 @@
+import type { Course } from "./schema";
+
+export const sampleCourse: Course = {
+  course: {
+    org: "ThaiMOOC",
+    courseCode: "DEMO101",
+    run: "2026T1",
+    displayName: "ตัวอย่างคอร์ส OLX",
+    language: "th",
+    start: "2026-06-01T00:00:00Z",
+    selfPaced: true,
+  },
+  about: {
+    shortDescription: "ตัวอย่างคอร์สสำหรับทดสอบ OLX Course Builder",
+    overview:
+      '<section class="about"><h2>เกี่ยวกับรายวิชา</h2><p>ตัวอย่างคอร์สที่สร้างจาก OLX Course Builder</p></section>',
+    effort: "1 ชั่วโมง",
+    duration: "1 ชั่วโมง",
+    introVideoYoutubeId: "",
+    subtitle: "Sample course",
+  },
+  grading: {
+    cutoffs: { Pass: 0.7 },
+    graders: [
+      { type: "Quiz", shortLabel: "Qz", minCount: 1, dropCount: 0, weight: 1.0 },
+    ],
+  },
+  chapters: [
+    {
+      displayName: "บทที่ 1 — แนะนำรายวิชา",
+      sequentials: [
+        {
+          displayName: "บทเรียน 1.1",
+          verticals: [
+            {
+              displayName: "Welcome",
+              blocks: [
+                {
+                  type: "html",
+                  displayName: "Intro",
+                  html: "<h2>ยินดีต้อนรับ</h2><p>นี่คือตัวอย่างเนื้อหา HTML</p>",
+                },
+                {
+                  type: "problem",
+                  displayName: "Quiz 1",
+                  problemType: "multiplechoice",
+                  question: "<p>2 + 2 = ?</p>",
+                  choices: [
+                    { text: "3", correct: false },
+                    { text: "4", correct: true },
+                    { text: "5", correct: false },
+                  ],
+                  maxAttempts: 1,
+                  showAnswer: "closed",
+                },
+                {
+                  type: "problem",
+                  displayName: "Quiz 2 (multi)",
+                  problemType: "checkbox",
+                  question: "<p>เลือกจำนวนเฉพาะ</p>",
+                  choices: [
+                    { text: "2", correct: true },
+                    { text: "4", correct: false },
+                    { text: "5", correct: true },
+                    { text: "9", correct: false },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};

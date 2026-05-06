@@ -1,0 +1,122 @@
+[
+  {
+    "displayName": "ข้อ 1 — Backward Design",
+    "problemType": "multiplechoice",
+    "question": "<p>ขั้นตอนแรกของ Backward Design คืออะไร?</p>",
+    "choices": [
+      { "text": "เลือกสื่อการสอน", "correct": false },
+      { "text": "กำหนดผลลัพธ์การเรียนรู้ที่คาดหวัง", "correct": true },
+      { "text": "วางแผนกิจกรรม", "correct": false },
+      { "text": "สร้างข้อสอบ", "correct": false }
+    ],
+    "maxAttempts": 2
+  },
+  {
+    "displayName": "ข้อ 2 — Constructive Alignment",
+    "problemType": "checkbox",
+    "question": "<p>องค์ประกอบใดบ้างที่อยู่ในหลัก Constructive Alignment?</p>",
+    "choices": [
+      { "text": "Learning Outcomes", "correct": true },
+      { "text": "Teaching & Learning Activities", "correct": true },
+      { "text": "Assessment Tasks", "correct": true },
+      { "text": "ค่าลงทะเบียน", "correct": false }
+    ],
+    "maxAttempts": 2
+  },
+  {
+    "displayName": "ข้อ 3 — ADDIE Model",
+    "problemType": "multiplechoice",
+    "question": "<p>ขั้นตอนใดของ ADDIE ที่เกี่ยวกับการ <em>ผลิตเนื้อหาและสื่อจริง</em>?</p>",
+    "choices": [
+      { "text": "Analysis", "correct": false },
+      { "text": "Design", "correct": false },
+      { "text": "Development", "correct": true },
+      { "text": "Evaluation", "correct": false }
+    ],
+    "maxAttempts": 2
+  },
+  {
+    "displayName": "ข้อ 4 — Bloom's Taxonomy",
+    "problemType": "multiplechoice",
+    "question": "<p>คำกริยา <strong>“ออกแบบ”</strong> อยู่ในระดับใดของ Bloom's Taxonomy (Revised)?</p>",
+    "choices": [
+      { "text": "Remember", "correct": false },
+      { "text": "Apply", "correct": false },
+      { "text": "Analyze", "correct": false },
+      { "text": "Create", "correct": true }
+    ],
+    "maxAttempts": 2
+  },
+  {
+    "displayName": "ข้อ 5 — SMART Outcomes",
+    "problemType": "checkbox",
+    "question": "<p>Learning Outcome ใดเขียนตามหลัก SMART?</p>",
+    "choices": [
+      { "text": "ผู้เรียนเขียนฟังก์ชัน Python ที่คำนวณค่าเฉลี่ยได้ภายใน 15 นาที", "correct": true },
+      { "text": "ผู้เรียนสร้าง Mind Map สรุปบทที่ 3 ได้ภายใน 30 นาที", "correct": true },
+      { "text": "ผู้เรียนเข้าใจหลักการเรียนรู้", "correct": false },
+      { "text": "ผู้เรียนรู้สึกสนุกกับการเรียน", "correct": false }
+    ],
+    "maxAttempts": 2
+  },
+  {
+    "displayName": "ข้อ 6 — Synchronous vs Asynchronous",
+    "problemType": "multiplechoice",
+    "question": "<p>การเรียนแบบ <strong>Asynchronous</strong> เหมาะกับสถานการณ์ใดมากที่สุด?</p>",
+    "choices": [
+      { "text": "ต้องการ feedback ทันที", "correct": false },
+      { "text": "ผู้เรียนกระจายในหลาย time zone", "correct": true },
+      { "text": "กิจกรรม role-play พร้อมกัน", "correct": false },
+      { "text": "การ debate สด", "correct": false }
+    ],
+    "maxAttempts": 2
+  },
+  {
+    "displayName": "ข้อ 7 — Formative Assessment",
+    "problemType": "checkbox",
+    "question": "<p>การประเมินใดถือเป็น <strong>Formative Assessment</strong>?</p>",
+    "choices": [
+      { "text": "Exit ticket หลังบทเรียน 5 นาที", "correct": true },
+      { "text": "Quiz สั้นๆ ระหว่างเรียน", "correct": true },
+      { "text": "การสังเกตพฤติกรรมในห้อง", "correct": true },
+      { "text": "ข้อสอบปลายภาค 100 คะแนน", "correct": false }
+    ],
+    "maxAttempts": 2
+  },
+  {
+    "displayName": "ข้อ 8 — Rubric",
+    "problemType": "multiplechoice",
+    "question": "<p>องค์ประกอบใด <strong>ไม่ใช่</strong> ส่วนของ Rubric?</p>",
+    "choices": [
+      { "text": "Criteria", "correct": false },
+      { "text": "Levels of quality", "correct": false },
+      { "text": "Descriptors", "correct": false },
+      { "text": "ราคาค่าเล่าเรียน", "correct": true }
+    ],
+    "maxAttempts": 2
+  },
+  {
+    "displayName": "ข้อ 9 — Mayer's Multimedia Principles",
+    "problemType": "multiplechoice",
+    "question": "<p>หลักการใดของ Mayer ที่บอกว่า <em>ควรตัดสิ่งที่ไม่จำเป็นออก</em>?</p>",
+    "choices": [
+      { "text": "Coherence Principle", "correct": true },
+      { "text": "Signaling Principle", "correct": false },
+      { "text": "Redundancy Principle", "correct": false },
+      { "text": "Pre-training Principle", "correct": false }
+    ],
+    "maxAttempts": 2
+  },
+  {
+    "displayName": "ข้อ 10 — Active Learning ออนไลน์",
+    "problemType": "checkbox",
+    "question": "<p>เทคนิคใดสามารถใช้ทำ Active Learning ในการสอนออนไลน์ได้?</p>",
+    "choices": [
+      { "text": "Think-Pair-Share ใน breakout room", "correct": true },
+      { "text": "Polling/Quiz สั้นๆ ระหว่างคลาส", "correct": true },
+      { "text": "Peer Review งานกัน", "correct": true },
+      { "text": "ฟังการบรรยาย 3 ชั่วโมงรวด", "correct": false }
+    ],
+    "maxAttempts": 2
+  }
+]
