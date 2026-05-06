@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OLX Course Builder
 
-## Getting Started
+JSON → OLX (`.tar.gz`) builder for [Open edX](https://openedx.org). Author courses in a fast web UI, export a Studio-importable bundle.
 
-First, run the development server:
+## Features
+- **Course Outline Designer** — tree view, rename inline, reorder, delete, add at every level
+- **Block types** — HTML (TinyMCE rich editor), Problem (MCQ + Checkbox), Video (YouTube)
+- **Bulk Problem Import** — paste / upload CSV or JSON to add many problems at once
+- **TinyMCE rich editor** — same family as Open edX Studio; uploaded images auto-routed to asset panel
+- **Course Info** — overview HTML, intro video, short description, effort, duration
+- **Asset pipeline** — `asset://name` references in HTML, rewritten to `/static/` at export
+- **Persistence** — auto-save to localStorage + linked-file save via File System Access API
+- **Validation** — Zod schema + missing assets + answer integrity warnings
+- **i18n-ready** — Sarabun font (Thai + Latin), language selectable per course
 
+## Quick Start
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+nvm use 22                    # Node ≥ 20 required
+npm install
+npm run dev -- -p 3939        # http://localhost:3939
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then in the UI:
+1. Click **Sample** to load the demo
+2. Edit outline / blocks / course info
+3. Click **Export** → `.tar.gz` downloads
+4. In Open edX Studio: Tools → Import → upload the file
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Stack
+Next.js 16 (Turbopack) · React 19 · TypeScript · Tailwind v4 · Zod · TinyMCE 7 (self-hosted) · Radix UI primitives · Sarabun + JetBrains Mono
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Documentation
+- [`docs/PRD.md`](docs/PRD.md) — Product requirements & JSON schema
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — File layout & data flow
+- [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) — Step-by-step rebuild guide
+- [`docs/PROGRESS.md`](docs/PROGRESS.md) — Status of features
+- [`AGENTS.md`](AGENTS.md) — Guide for AI coding agents
 
-## Learn More
+## Sample files (in `public/`)
+- `sample.json` — minimal sample
+- `sample-course-design.json` — 5-hour Thai course "การออกแบบหลักสูตรออนไลน์"
+- `problems-learning-design.json` — 10 problems for bulk-import demo
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+TinyMCE bundled under GPL. Project license TBD.
