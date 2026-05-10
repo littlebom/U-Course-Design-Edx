@@ -139,13 +139,21 @@ export function BulkProblemImport({ onImport, onClose }: Props) {
   );
 }
 
+type RawProblem = {
+  displayName?: string;
+  problemType?: string;
+  question?: string;
+  choices?: Array<string | { text: string; correct?: boolean }>;
+  maxAttempts?: string | number;
+};
+
 function parseJson(text: string): ProblemBlock[] {
   const parsed = JSON.parse(text);
-  const arr = Array.isArray(parsed) ? parsed : [parsed];
+  const arr: RawProblem[] = Array.isArray(parsed) ? parsed : [parsed];
   return arr.map((p, i) => normalize(p, i));
 }
 
-function normalize(p: any, i: number): ProblemBlock {
+function normalize(p: RawProblem, i: number): ProblemBlock {
   if (!p.question) throw new Error(`ข้อ ${i + 1}: ไม่มี question`);
   if (!Array.isArray(p.choices) || p.choices.length < 2)
     throw new Error(`ข้อ ${i + 1}: ต้องมี choices ≥ 2`);
@@ -154,7 +162,7 @@ function normalize(p: any, i: number): ProblemBlock {
     displayName: p.displayName ?? `Problem ${i + 1}`,
     problemType: p.problemType === "checkbox" ? "checkbox" : "multiplechoice",
     question: p.question,
-    choices: p.choices.map((c: any) =>
+    choices: p.choices.map((c) =>
       typeof c === "string"
         ? { text: c.replace(/\*$/, ""), correct: c.endsWith("*") }
         : { text: String(c.text), correct: !!c.correct },

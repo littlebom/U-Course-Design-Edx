@@ -1,7 +1,7 @@
 import type { Course } from "./schema";
 import { courseSchema } from "./schema";
 
-type FileSystemFileHandle = {
+export type FileSystemFileHandle = {
   name: string;
   getFile: () => Promise<File>;
   createWritable: () => Promise<{

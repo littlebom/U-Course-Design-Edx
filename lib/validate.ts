@@ -11,13 +11,13 @@ export function validateCourse(course: Course, assetNames: Set<string>): Validat
   course.chapters.forEach((ch, ci) => {
     if (ch.sequentials.length === 0)
       issues.push({ level: "error", message: `บทที่ ${ci + 1} ไม่มี sequential` });
-    ch.sequentials.forEach((seq, si) => {
+    ch.sequentials.forEach((seq) => {
       if (seq.verticals.length === 0)
         issues.push({ level: "error", message: `${ch.displayName} › ${seq.displayName} ไม่มี vertical` });
-      seq.verticals.forEach((v, vi) => {
+      seq.verticals.forEach((v) => {
         if (v.blocks.length === 0)
           issues.push({ level: "warning", message: `${v.displayName} ไม่มี block` });
-        v.blocks.forEach((b, bi) => {
+        v.blocks.forEach((b) => {
           const where = `${ch.displayName} › ${seq.displayName} › ${v.displayName} › ${b.displayName}`;
           if (b.type === "html") {
             for (const m of b.html.matchAll(ASSET_RE)) referenced.add(m[1]);

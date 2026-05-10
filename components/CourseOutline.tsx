@@ -42,7 +42,8 @@ export function CourseOutline({ course, onChange, onSelectBlock }: Props) {
 
   const toggle = (key: string) => {
     const next = new Set(expanded);
-    next.has(key) ? next.delete(key) : next.add(key);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
     setExpanded(next);
   };
 

@@ -32,6 +32,7 @@ import {
   saveAsCourseFile,
   supportsFileSystemAccess,
   writeHandle,
+  type FileSystemFileHandle,
 } from "@/lib/fileHandle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -51,26 +52,30 @@ export default function Page() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [hydrated, setHydrated] = useState(false);
-  const [linkedFile, setLinkedFile] = useState<{ handle: any; name: string } | null>(null);
+  const [linkedFile, setLinkedFile] = useState<{ handle: FileSystemFileHandle; name: string } | null>(null);
   const [linkedSavedAt, setLinkedSavedAt] = useState<number | null>(null);
   const [fsaSupported, setFsaSupported] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setFsaSupported(supportsFileSystemAccess());
     const v = localStorage.getItem("olx-builder:sidebar");
     if (v === "0") setSidebarOpen(false);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (hydrated) localStorage.setItem("olx-builder:sidebar", sidebarOpen ? "1" : "0");
   }, [sidebarOpen, hydrated]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const saved = loadFromStorage();
     if (saved) setCourse(saved);
     setHydrated(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (!hydrated) return;
@@ -96,8 +101,9 @@ export default function Page() {
       if (!result) return;
       setLinkedFile({ handle: result.handle, name: result.handle.name });
       if (result.course) setCourse(result.course);
-    } catch (e: any) {
-      if (e?.name !== "AbortError") setTopErr(e?.message ?? String(e));
+    } catch (e) {
+      const err = e as { name?: string; message?: string };
+      if (err?.name !== "AbortError") setTopErr(err?.message ?? String(e));
     }
   };
 
@@ -116,8 +122,9 @@ export default function Page() {
       } else {
         downloadCourseJson(course);
       }
-    } catch (e: any) {
-      if (e?.name !== "AbortError") setTopErr(e?.message ?? String(e));
+    } catch (e) {
+      const err = e as { name?: string; message?: string };
+      if (err?.name !== "AbortError") setTopErr(err?.message ?? String(e));
     }
   };
 
