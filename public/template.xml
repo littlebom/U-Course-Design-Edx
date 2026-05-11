@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<course
+  org="SRU"
+  courseCode="GED1001-MC1"
+  run="2026T1"
+  displayName="Micro-Course 1: Digital Foundation &amp; The Future"
+  language="th"
+  start="2026-06-01T00:00:00Z"
+  selfPaced="true"
+>
+  <about
+    shortDescription="เจาะลึกความฉลาดรู้ทางดิจิทัล (DQ) และเตรียมความพร้อมสู่โลกอนาคตที่ขับเคลื่อนด้วย AI"
+    overview="ท่ามกลางกระแสธารแห่งความเปลี่ยนแปลงที่ขับเคลื่อนด้วยปัญญาประดิษฐ์ (AI-Driven Era) ความสามารถในการปรับตัวและการเป็นพลเมืองดิจิทัลที่มีคุณภาพไม่ใช่ทางเลือกอีกต่อไป แต่เป็นทักษะการอยู่รอดพื้นฐานที่สำคัญที่สุดในศตวรรษที่ 21"
+    effort="03:00"
+    duration="1 week"
+    introVideoYoutubeId="VIDEO_ID_INTRO"
+    subtitle="ก้าวข้ามขีดจำกัด สู่ผู้นำดิจิทัลยุค AI"
+  />
+
+  <grading>
+    <cutoffs Pass="0.8"/>
+    <grader type="PreTest"   shortLabel="PT" minCount="1" dropCount="0" weight="0"/>
+    <grader type="Quiz"      shortLabel="Qz" minCount="3" dropCount="0" weight="0.3"/>
+    <grader type="FinalExam" shortLabel="FE" minCount="1" dropCount="0" weight="0.7"/>
+  </grading>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       Section 1 — The Power of Digital Intelligence (DQ)
+       ═══════════════════════════════════════════════════════════ -->
+  <chapter displayName="Section 1 — The Power of Digital Intelligence (DQ)">
+
+    <sequential displayName="Subsection 1.1: DQ vs IQ in AI Era">
+      <vertical displayName="บทนำและความหมายของ DQ">
+        <video displayName="ยินดีต้อนรับสู่ GED1001 MC1"        youtubeId="VIDEO_ID_1" downloadAllowed="false"/>
+        <video displayName="DQ 8 Pillars: ทักษะพลเมืองดิจิทัล" youtubeId="VIDEO_ID_2" downloadAllowed="false"/>
+        <html displayName="สรุปกรอบแนวคิด DQ"><![CDATA[
+<h3>Digital Intelligence (DQ) Framework</h3>
+<p>ความเก่งทางเทคนิคเป็นเพียงส่วนหนึ่ง แต่ความฉลาดในการใช้ชีวิตในโลกดิจิทัลคือหัวใจหลัก ประกอบด้วย 8 ทักษะสำคัญ...</p>
+        ]]></html>
+        <html displayName="กิจกรรมสะท้อนคิด (Discussion Point)"><![CDATA[
+<div style="background:#f9f9f9;padding:15px;border-left:5px solid #2d5f5d;">
+  <p><strong>คำถามชวนคิด:</strong> จาก DQ ทั้ง 8 ด้าน คุณคิดว่าทักษะใดสำคัญที่สุดสำหรับการทำงานในอนาคต?
+  กรุณานำความคิดเห็นของคุณไปแลกเปลี่ยนกับเพื่อนๆ ในเมนู Discussion ของระบบ</p>
+</div>
+        ]]></html>
+      </vertical>
+    </sequential>
+
+    <sequential displayName="Subsection 1.2: Personal DQ Diagnostic">
+      <vertical displayName="การประเมินทักษะดิจิทัลตนเอง">
+        <video displayName="แนะนำการใช้เครื่องมือ DQ Diagnostic" youtubeId="VIDEO_ID_3" downloadAllowed="false"/>
+        <problem
+          displayName="Quiz: ความเข้าใจพื้นฐาน DQ"
+          problemType="multiplechoice"
+          maxAttempts="2"
+          showAnswer="finished"
+        >
+          <question><![CDATA[<p>ข้อใดคือเป้าหมายสูงสุดของการพัฒนาทักษะ DQ?</p>]]></question>
+          <choices>
+            <choice correct="false">การมีตัวตนในโลกออนไลน์ที่โดดเด่น</choice>
+            <choice correct="true">การเป็นพลเมืองดิจิทัลที่มีจริยธรรมและพร้อมรับการเปลี่ยนแปลง</choice>
+          </choices>
+        </problem>
+      </vertical>
+    </sequential>
+
+  </chapter>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       Section 2 — Technology Landscape & AI Disruption
+       ═══════════════════════════════════════════════════════════ -->
+  <chapter displayName="Section 2 — Technology Landscape &amp; AI Disruption">
+
+    <sequential displayName="Subsection 2.1: Infrastructure &amp; Data">
+      <vertical displayName="หัวใจของเทคโนโลยีสมัยใหม่">
+        <video displayName="The Cloud &amp; Connectivity"  youtubeId="VIDEO_ID_4" downloadAllowed="false"/>
+        <video displayName="Big Data: พลังแห่งข้อมูล"    youtubeId="VIDEO_ID_5" downloadAllowed="false"/>
+        <problem
+          displayName="Quiz: ระบบนิเวศข้อมูล"
+          problemType="checkbox"
+          maxAttempts="1"
+          showAnswer="finished"
+        >
+          <question><![CDATA[<p>คุณลักษณะใดต่อไปนี้ที่ถือว่าเป็นองค์ประกอบของ Big Data?</p>]]></question>
+          <choices>
+            <choice correct="true">Volume (ปริมาณมหาศาล)</choice>
+            <choice correct="true">Velocity (ความรวดเร็วในการส่งผ่าน)</choice>
+            <choice correct="false">Vague (ความคลุมเครือของที่มา)</choice>
+            <choice correct="true">Variety (ความหลากหลายของรูปแบบ)</choice>
+          </choices>
+        </problem>
+      </vertical>
+    </sequential>
+
+    <sequential displayName="Subsection 2.2: Understanding AI">
+      <vertical displayName="การทำงานของปัญญาประดิษฐ์">
+        <video displayName="How AI Thinks: กระบวนการคิดของ AI" youtubeId="VIDEO_ID_6" downloadAllowed="false"/>
+        <video displayName="AI &amp; Machine Learning พื้นฐาน"  youtubeId="VIDEO_ID_7" downloadAllowed="false"/>
+        <html displayName="Interactive Visualizer Link"><![CDATA[
+<p>คลิกเพื่อทดลองใช้เครื่องมือ Neural Network Playground เพื่อทำความเข้าใจการเรียนรู้ของเครื่อง</p>
+        ]]></html>
+      </vertical>
+    </sequential>
+
+  </chapter>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       Section 3 — Future-Proofing Your Career
+       ═══════════════════════════════════════════════════════════ -->
+  <chapter displayName="Section 3 — Future-Proofing Your Career">
+
+    <sequential displayName="Subsection 3.1: Digital Transformation">
+      <vertical displayName="การเตรียมความพร้อมสู่อนาคต">
+        <video displayName="วิเคราะห์ตลาดงานปี 2026"      youtubeId="VIDEO_ID_8" downloadAllowed="false"/>
+        <video displayName="Case Study: โลกที่เปลี่ยนไป" youtubeId="VIDEO_ID_9" downloadAllowed="false"/>
+      </vertical>
+    </sequential>
+
+    <sequential displayName="Subsection 3.2: Human-AI Collaboration">
+      <vertical displayName="บทสรุปและจริยธรรมเทคโนโลยี">
+        <video displayName="Co-pilot Mindset: ทำงานร่วมกับ AI" youtubeId="VIDEO_ID_10"    downloadAllowed="false"/>
+        <problem
+          displayName="Final Exam: Micro-Course 1"
+          problemType="multiplechoice"
+          maxAttempts="2"
+          showAnswer="finished"
+        >
+          <question><![CDATA[<p>Agile Mindset ในยุค Digital Transformation มีความสำคัญอย่างไร?</p>]]></question>
+          <choices>
+            <choice correct="true">ช่วยให้สามารถปรับเปลี่ยนกลยุทธ์ได้ทันทีตามสถานการณ์ข้อมูลที่เปลี่ยนไป</choice>
+            <choice correct="false">ช่วยให้ประหยัดงบประมาณในการจ้างงานบุคลากรไอที</choice>
+            <choice correct="false">ช่วยลดขั้นตอนการทำงานให้เหลือเพียงอย่างเดียว</choice>
+          </choices>
+        </problem>
+        <video displayName="บทสรุปและแนะนำรายวิชาถัดไป" youtubeId="VIDEO_ID_FINALE" downloadAllowed="false"/>
+      </vertical>
+    </sequential>
+
+  </chapter>
+
+</course>

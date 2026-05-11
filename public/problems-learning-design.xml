@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<problems>
+
+  <!-- ข้อ 1 | Bloom's: Remember -->
+  <problem displayName="ข้อ 1 — Digital Access (Remember)" problemType="multiplechoice" maxAttempts="2" showAnswer="finished">
+    <question><![CDATA[<p>ตามกรอบแนวคิดความฉลาดรู้ทางดิจิทัล (DQ) องค์ประกอบพื้นฐานที่เน้น "ความสามารถในการเข้าถึงและใช้เทคโนโลยีได้อย่างเหมาะสมและเท่าเทียม" ตรงกับข้อใด?</p>]]></question>
+    <choices>
+      <choice correct="false">Digital Law (กฎหมายดิจิทัล)</choice>
+      <choice correct="true">Digital Access (การเข้าถึงดิจิทัล)</choice>
+      <choice correct="false">Digital Commerce (พาณิชย์ดิจิทัล)</choice>
+      <choice correct="false">Digital Etiquette (มารยาทในสังคมดิจิทัล)</choice>
+    </choices>
+    <explanation>Digital Access คือพื้นฐานของการเป็นพลเมืองดิจิทัลที่หมายถึงการมีสิทธิและความสามารถในการเข้าถึงเครื่องมือดิจิทัลและเครือข่ายสารสนเทศอย่างทั่วถึง</explanation>
+  </problem>
+
+  <!-- ข้อ 2 | Bloom's: Understand -->
+  <problem displayName="ข้อ 2 — Digital Footprint (Understand)" problemType="multiplechoice" maxAttempts="2" showAnswer="finished">
+    <question><![CDATA[<p>เหตุใดพลเมืองดิจิทัลจึงควรให้ความสำคัญกับ "Digital Footprint" (รอยเท้าดิจิทัล) ของตนเองมากที่สุด?</p>]]></question>
+    <choices>
+      <choice correct="false">เพื่อช่วยให้ระบบคอมพิวเตอร์ประมวลผลข้อมูลได้รวดเร็วขึ้น</choice>
+      <choice correct="false">เพื่อลดพื้นที่การจัดเก็บข้อมูลในระบบคลาวด์ (Cloud Storage)</choice>
+      <choice correct="true">เพราะข้อมูลที่ถูกบันทึกไว้ในโลกออนไลน์จะคงอยู่เป็นระยะเวลานานและส่งผลต่อชื่อเสียงหรือภาพลักษณ์ในอนาคต</choice>
+      <choice correct="false">เพื่อให้สามารถติดตามตำแหน่งที่อยู่ของผู้อื่นได้แม่นยำขึ้น</choice>
+    </choices>
+    <explanation>รอยเท้าดิจิทัลเปรียบเสมือนประวัติพฤติกรรมออนไลน์ที่ลบออกได้ยาก ซึ่งส่งผลกระทบต่อความน่าเชื่อถือและการตรวจสอบประวัติในอนาคต</explanation>
+  </problem>
+
+  <!-- ข้อ 3 | Bloom's: Apply -->
+  <problem displayName="ข้อ 3 — Fact-checking (Apply)" problemType="multiplechoice" maxAttempts="2" showAnswer="finished">
+    <question><![CDATA[<p>หากท่านได้รับข้อความผ่านแอปพลิเคชัน Line ที่ระบุว่า "รัฐบาลจะแจกเงินเยียวยา 5,000 บาท ให้ทุกคนทันทีที่กดลิงก์นี้" ในฐานะพลเมืองดิจิทัลที่มีทักษะ ท่านควรดำเนินการอย่างไรเป็นอันดับแรก?</p>]]></question>
+    <choices>
+      <choice correct="false">รีบกดลิงก์เพื่อรักษาสิทธิ์ของตนเองก่อนที่โควตาจะเต็ม</choice>
+      <choice correct="false">ส่งต่อ (Forward) ข้อความให้เพื่อนสนิททันทีเพื่อเป็นการแจ้งข่าว</choice>
+      <choice correct="false">คัดลอกข้อความไปโพสต์ใน Facebook เพื่อถามความเห็นสาธารณะ</choice>
+      <choice correct="true">ตรวจสอบที่มาของข่าวจากเว็บไซต์ทางการของหน่วยงานรัฐหรือแหล่งข่าวที่น่าเชื่อถือ (Fact-checking) ก่อนดำเนินการใดๆ</choice>
+    </choices>
+    <explanation>การมีทักษะพลเมืองดิจิทัลต้องรู้จักการคิดวิเคราะห์ (Critical Thinking) และการตรวจสอบข้อมูลก่อนที่จะเชื่อหรือส่งต่อ เพื่อป้องกันความเสี่ยงจากมิจฉาชีพ</explanation>
+  </problem>
+
+</problems>

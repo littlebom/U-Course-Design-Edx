@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, FileSpreadsheet, FileJson } from "lucide-react";
+import { Upload, FileSpreadsheet, FileJson, FileCode2 } from "lucide-react";
 import type { ProblemBlock } from "@/lib/schema";
 import {
   Dialog,
@@ -37,21 +37,34 @@ const JSON_TEMPLATE = `[
   }
 ]`;
 
+const XML_TEMPLATE = `<?xml version="1.0" encoding="UTF-8"?>
+<problems>
+  <problem displayName="Q1" problemType="multiplechoice" maxAttempts="2">
+    <question><![CDATA[<p>2+2 = ?</p>]]></question>
+    <choices>
+      <choice correct="false">3</choice>
+      <choice correct="true">4</choice>
+      <choice correct="false">5</choice>
+    </choices>
+  </problem>
+</problems>`;
+
 export function BulkProblemImport({ onImport, onClose }: Props) {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<"csv" | "json">("csv");
+  const [mode, setMode] = useState<"csv" | "json" | "xml">("csv");
 
   const handleFile = async (f: File) => {
     const t = await f.text();
     setText(t);
-    setMode(f.name.toLowerCase().endsWith(".json") ? "json" : "csv");
+    const name = f.name.toLowerCase();
+    setMode(name.endsWith(".json") ? "json" : name.endsWith(".xml") ? "xml" : "csv");
   };
 
   const submit = () => {
     setError(null);
     try {
-      const problems = mode === "json" ? parseJson(text) : parseCsv(text);
+      const problems = mode === "json" ? parseJson(text) : mode === "xml" ? parseXml(text) : parseCsv(text);
       if (problems.length === 0) throw new Error("ไม่พบข้อมูล problem");
       onImport(problems);
     } catch (e) {
@@ -71,9 +84,9 @@ export function BulkProblemImport({ onImport, onClose }: Props) {
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Tabs value={mode} onValueChange={(v) => {
-              const m = v as "csv" | "json";
+              const m = v as "csv" | "json" | "xml";
               setMode(m);
-              setText(m === "csv" ? CSV_TEMPLATE : JSON_TEMPLATE);
+              setText(m === "csv" ? CSV_TEMPLATE : m === "xml" ? XML_TEMPLATE : JSON_TEMPLATE);
             }}>
               <TabsList className="bg-default-100 !gap-1 !p-1">
                 <TabsTrigger value="csv" className="!px-3">
@@ -81,6 +94,9 @@ export function BulkProblemImport({ onImport, onClose }: Props) {
                 </TabsTrigger>
                 <TabsTrigger value="json" className="!px-3">
                   <FileJson size={13} className="me-1" /> JSON
+                </TabsTrigger>
+                <TabsTrigger value="xml" className="!px-3">
+                  <FileCode2 size={13} className="me-1" /> XML
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -90,7 +106,7 @@ export function BulkProblemImport({ onImport, onClose }: Props) {
                   <Upload size={13} className="me-1.5" /> เลือกไฟล์
                   <input
                     type="file"
-                    accept=".csv,.json,text/csv,application/json"
+                    accept=".csv,.json,.xml,text/csv,application/json,application/xml,text/xml"
                     className="hidden"
                     onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
                   />
@@ -107,6 +123,17 @@ export function BulkProblemImport({ onImport, onClose }: Props) {
               </div>
               <div>
                 <code className="rounded bg-background/70 px-1">choices</code> คั่นด้วย <code className="rounded bg-background/70 px-1">|</code>; ใส่ <code className="rounded bg-background/70 px-1">*</code> ต่อท้ายข้อที่ถูก เช่น <code className="rounded bg-background/70 px-1">3|4*|5</code>
+              </div>
+            </div>
+          )}
+          {mode === "xml" && (
+            <div className="space-y-1 rounded-md bg-info/10 px-3 py-2 text-xs text-default-700 ring-1 ring-info/20">
+              <div className="font-semibold">รูปแบบ XML</div>
+              <div>
+                ครอบทุกข้อด้วย <code className="rounded bg-background/70 px-1">&lt;problems&gt;</code>; แต่ละข้อใช้ <code className="rounded bg-background/70 px-1">&lt;problem&gt;</code>
+              </div>
+              <div>
+                เนื้อหา HTML ใน <code className="rounded bg-background/70 px-1">&lt;question&gt;</code> ใช้ <code className="rounded bg-background/70 px-1">&lt;![CDATA[...]]&gt;</code>; ข้อถูกใส่ <code className="rounded bg-background/70 px-1">correct=&quot;true&quot;</code>
               </div>
             </div>
           )}
@@ -146,6 +173,34 @@ type RawProblem = {
   choices?: Array<string | { text: string; correct?: boolean }>;
   maxAttempts?: string | number;
 };
+
+function parseXml(text: string): ProblemBlock[] {
+  const doc = new DOMParser().parseFromString(text, "application/xml");
+  const err = doc.querySelector("parsererror");
+  if (err) throw new Error(`XML ไม่ถูกต้อง: ${err.textContent?.slice(0, 120)}`);
+  const els = Array.from(doc.querySelectorAll("problems > problem"));
+  if (els.length === 0) throw new Error("ไม่พบ <problem> ใน <problems>");
+  return els.map((el, i) => {
+    const questionEl = el.querySelector(":scope > question");
+    const choiceEls = el.querySelectorAll(":scope > choices > choice");
+    const maxA = el.getAttribute("maxAttempts");
+    const showA = el.getAttribute("showAnswer");
+    return normalize(
+      {
+        displayName: el.getAttribute("displayName") ?? undefined,
+        problemType: el.getAttribute("problemType") ?? "multiplechoice",
+        question: questionEl?.textContent ?? "",
+        choices: Array.from(choiceEls).map((c) => ({
+          text: c.textContent ?? "",
+          correct: c.getAttribute("correct") === "true",
+        })),
+        maxAttempts: maxA ? Number(maxA) : undefined,
+        ...(showA ? { showAnswer: showA } : {}),
+      },
+      i,
+    );
+  });
+}
 
 function parseJson(text: string): ProblemBlock[] {
   const parsed = JSON.parse(text);

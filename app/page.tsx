@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   GraduationCap,
-  Sparkles,
+
   Plus,
   Info,
   Save,
   RotateCcw,
   CheckCircle2,
-  FolderOpen,
+  Download,
   Link2,
   PanelRightOpen,
   PanelRightClose,
@@ -28,13 +28,13 @@ import { BulkProblemImport } from "@/components/BulkProblemImport";
 import { CourseInfoDialog } from "@/components/CourseInfoDialog";
 import { clearStorage, downloadCourseJson, loadFromStorage, saveToStorage } from "@/lib/persist";
 import {
-  openCourseFile,
   saveAsCourseFile,
   supportsFileSystemAccess,
   writeHandle,
   type FileSystemFileHandle,
 } from "@/lib/fileHandle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +46,7 @@ type Sel = { ci: number; si: number; vi: number; bi: number } | null;
 export default function Page() {
   const [course, setCourse] = useState<Course>(sampleCourse);
   const [assets, setAssets] = useState<Map<string, AssetFile>>(new Map());
+  const [confirmReset, setConfirmReset] = useState(false);
   const [sel, setSel] = useState<Sel>({ ci: 0, si: 0, vi: 0, bi: 0 });
   const [bulkTarget, setBulkTarget] = useState<{ ci: number; si: number; vi: number } | null>(null);
   const [topErr, setTopErr] = useState<string | null>(null);
@@ -86,24 +87,20 @@ export default function Page() {
     return () => clearTimeout(t);
   }, [course, hydrated]);
 
-  const resetToSample = () => {
-    if (confirm("ล้างข้อมูลทั้งหมดและโหลด sample ใหม่?")) {
-      clearStorage();
-      setLinkedFile(null);
-      setCourse(sampleCourse);
-    }
+  const doReset = () => {
+    clearStorage();
+    setLinkedFile(null);
+    setCourse(sampleCourse);
+    setConfirmReset(false);
   };
 
-  const handleOpenFile = async () => {
-    setTopErr(null);
-    try {
-      const result = await openCourseFile();
-      if (!result) return;
-      setLinkedFile({ handle: result.handle, name: result.handle.name });
-      if (result.course) setCourse(result.course);
-    } catch (e) {
-      const err = e as { name?: string; message?: string };
-      if (err?.name !== "AbortError") setTopErr(err?.message ?? String(e));
+  const handleDownloadTemplates = () => {
+    const files = ["/template.xml", "/problems-learning-design.xml"];
+    for (const path of files) {
+      const a = document.createElement("a");
+      a.href = path;
+      a.download = path.slice(1);
+      a.click();
     }
   };
 
@@ -219,20 +216,18 @@ export default function Page() {
             <Info size={14} className="me-1.5" /> Course Info
           </Button>
           {fsaSupported && (
-            <Button variant="outline" size="sm" onClick={handleOpenFile}>
-              <FolderOpen size={14} className="me-1.5" /> Open File
+            <Button variant="outline" size="sm" onClick={handleDownloadTemplates}>
+              <Download size={14} className="me-1.5" /> Template
             </Button>
           )}
           <Button variant="outline" size="sm" onClick={handleSave}>
             <Save size={14} className="me-1.5" />
             {linkedFile ? "Save" : fsaSupported ? "Save As..." : "Save JSON"}
           </Button>
-          <Button variant="outline" size="sm" onClick={resetToSample}>
+          <Button variant="outline" size="sm" onClick={() => setConfirmReset(true)}>
             <RotateCcw size={14} className="me-1.5" /> Reset
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setCourse(sampleCourse)}>
-            <Sparkles size={14} className="me-1.5 text-warning" /> Sample
-          </Button>
+
           <JsonDropzone onLoad={setCourse} onError={setTopErr} />
           <ExportButton course={course} assets={assets} disabled={hasErrors} />
           <Separator orientation="vertical" className="h-6" />
@@ -357,6 +352,22 @@ export default function Page() {
       </main>
 
       {bulkTarget && <BulkProblemImport onImport={insertBulk} onClose={() => setBulkTarget(null)} />}
+
+      <Dialog open={confirmReset} onOpenChange={(o) => !o && setConfirmReset(false)}>
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw size={15} /> ยืนยันการ Reset
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-default-600">ล้างข้อมูลทั้งหมดและโหลด course ตัวอย่างใหม่ใช่หรือไม่?</p>
+          <DialogFooter>
+            <Button variant="ghost" size="sm" onClick={() => setConfirmReset(false)}>ยกเลิก</Button>
+            <Button color="destructive" size="sm" onClick={doReset}>Reset</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <CourseInfoDialog
         open={infoOpen}
         course={course}

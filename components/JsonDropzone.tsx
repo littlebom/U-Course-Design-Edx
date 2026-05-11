@@ -2,8 +2,9 @@
 
 import { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { FileJson, Upload } from "lucide-react";
-import { courseSchema, type Course } from "@/lib/schema";
+import { FileCode2, Upload } from "lucide-react";
+import { type Course } from "@/lib/schema";
+import { parseXmlCourse } from "@/lib/xmlParse";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -18,13 +19,8 @@ export function JsonDropzone({ onLoad, onError }: Props) {
       if (!f) return;
       try {
         const text = await f.text();
-        const parsed = JSON.parse(text);
-        const result = courseSchema.safeParse(parsed);
-        if (!result.success) {
-          onError(`Schema ไม่ถูกต้อง: ${result.error.issues[0]?.message ?? "unknown"}`);
-          return;
-        }
-        onLoad(result.data);
+        const course = parseXmlCourse(text);
+        onLoad(course);
       } catch (e) {
         onError(e instanceof Error ? e.message : String(e));
       }
@@ -34,7 +30,7 @@ export function JsonDropzone({ onLoad, onError }: Props) {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { "application/json": [".json"] },
+    accept: { "application/xml": [".xml"], "text/xml": [".xml"] },
     multiple: false,
   });
 
@@ -45,9 +41,9 @@ export function JsonDropzone({ onLoad, onError }: Props) {
         {isDragActive ? (
           <Upload size={14} className="me-1.5 text-primary" />
         ) : (
-          <FileJson size={14} className="me-1.5" />
+          <FileCode2 size={14} className="me-1.5" />
         )}
-        {isDragActive ? "วางที่นี่..." : "Import JSON"}
+        {isDragActive ? "วางที่นี่..." : "Import XML"}
       </Button>
     </div>
   );
