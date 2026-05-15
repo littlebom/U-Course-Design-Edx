@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   GraduationCap,
   Plus,
@@ -20,6 +20,7 @@ import {
   Settings,
   ChevronDown,
   X,
+  BookOpen,
 } from "lucide-react";
 import type { Course, ProblemBlock } from "@/lib/schema";
 import { sampleCourse } from "@/lib/sample";
@@ -34,7 +35,12 @@ import { ExportButton } from "@/components/ExportButton";
 import { BulkProblemImport } from "@/components/BulkProblemImport";
 import { CourseInfoDialog } from "@/components/CourseInfoDialog";
 import { SequentialEditor } from "@/components/SequentialEditor";
-import { clearStorage, downloadCourseJson, loadFromStorage, saveToStorage } from "@/lib/persist";
+import { CourseSwitcher } from "@/components/CourseSwitcher";
+import { SaveIndicator } from "@/components/SaveIndicator";
+import { downloadCourseJson } from "@/lib/persist";
+import { getCourse, saveCourse } from "@/lib/db/courses";
+import { setMeta } from "@/lib/db";
+import { deleteAsset, loadAssetsAsMap, putAsset } from "@/lib/db/assets";
 import {
   saveAsCourseFile,
   supportsFileSystemAccess,
@@ -52,10 +58,24 @@ import { cn } from "@/lib/utils";
 
 type Sel = { ci: number; si: number; vi: number; bi: number } | null;
 type SeqSel = { ci: number; si: number } | null;
+type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export default function Page() {
+  return (
+    <Suspense fallback={<div className="grid h-screen place-items-center text-default-400">กำลังโหลด…</div>}>
+      <PageInner />
+    </Suspense>
+  );
+}
+
+function PageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const courseId = searchParams.get("courseId");
+
   const [course, setCourse] = useState<Course>(sampleCourse);
   const [assets, setAssets] = useState<Map<string, AssetFile>>(new Map());
+  const [courseName, setCourseName] = useState<string>("");
   const [confirmReset, setConfirmReset] = useState(false);
   const [sel, setSel] = useState<Sel>({ ci: 0, si: 0, vi: 0, bi: 0 });
   const [seqSel, setSeqSel] = useState<SeqSel>(null);
@@ -63,7 +83,7 @@ export default function Page() {
   const [topErr, setTopErr] = useState<string | null>(null);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [infoOpen, setInfoOpen] = useState(false);
-  const router = useRouter();
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [linkedFile, setLinkedFile] = useState<{ handle: FileSystemFileHandle; name: string } | null>(null);
@@ -85,37 +105,87 @@ export default function Page() {
     if (hydrated) localStorage.setItem("olx-builder:sidebar", sidebarOpen ? "1" : "0");
   }, [sidebarOpen, hydrated]);
 
+  // ── Load course + assets from DB on mount / courseId change ────────────
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    const saved = loadFromStorage();
-    if (saved) setCourse(saved);
-    setHydrated(true);
-
-    // รับโครงสร้างจากหน้า Markdown import
-    const mdRaw = sessionStorage.getItem("olx-builder:md-import");
-    if (mdRaw) {
-      sessionStorage.removeItem("olx-builder:md-import");
-      try {
-        const chapters = JSON.parse(mdRaw);
-        setCourse((prev) => ({ ...prev, chapters: [...prev.chapters, ...chapters] }));
-      } catch { /* ignore */ }
+    if (!courseId) {
+      router.replace("/courses");
+      return;
     }
-  }, []);
+    let cancelled = false;
+    (async () => {
+      try {
+        const rec = await getCourse(courseId);
+        if (!rec) {
+          router.replace("/courses");
+          return;
+        }
+        if (cancelled) return;
+        setCourse(rec.course);
+        setCourseName(rec.name);
+        const map = await loadAssetsAsMap(courseId);
+        const assetMap = new Map<string, AssetFile>();
+        for (const [name, file] of map)
+          assetMap.set(name, { name, size: file.size, blob: file });
+        setAssets(assetMap);
+        await setMeta("currentCourseId", courseId);
+
+        // Accept structure from markdown import page (session-passed)
+        const mdRaw = sessionStorage.getItem("olx-builder:md-import");
+        if (mdRaw) {
+          sessionStorage.removeItem("olx-builder:md-import");
+          try {
+            const chapters = JSON.parse(mdRaw);
+            setCourse((prev) => ({ ...prev, chapters: [...prev.chapters, ...chapters] }));
+          } catch { /* ignore */ }
+        }
+        setHydrated(true);
+      } catch (e) {
+        setTopErr(e instanceof Error ? e.message : String(e));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [courseId, router]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  // ── Debounced save course → DB ─────────────────────────────────────────
   useEffect(() => {
-    if (!hydrated) return;
-    const t = setTimeout(() => {
-      saveToStorage(course);
-      setSavedAt(Date.now());
-    }, 500);
+    if (!hydrated || !courseId) return;
+    setSaveStatus("saving");
+    const t = setTimeout(async () => {
+      try {
+        await saveCourse(courseId, course);
+        setSaveStatus("saved");
+        setSavedAt(Date.now());
+      } catch (e) {
+        setSaveStatus("error");
+        setTopErr(e instanceof Error ? e.message : String(e));
+      }
+    }, 600);
     return () => clearTimeout(t);
-  }, [course, hydrated]);
+  }, [course, hydrated, courseId]);
+
+  // ── Asset CRUD: wrap setAssets to sync DB writes ───────────────────────
+  const handleAssetsChange = useCallback(async (next: Map<string, AssetFile>) => {
+    if (!courseId) { setAssets(next); return; }
+    const prevNames = new Set(assets.keys());
+    const nextNames = new Set(next.keys());
+    setAssets(next);
+    // Added or changed → write
+    for (const [name, af] of next) {
+      const prev = assets.get(name);
+      if (!prev || prev.blob !== af.blob) {
+        await putAsset(courseId, af.blob instanceof File ? af.blob : new File([af.blob], name), name);
+      }
+    }
+    // Removed → delete
+    for (const name of prevNames) {
+      if (!nextNames.has(name)) await deleteAsset(courseId, name);
+    }
+  }, [assets, courseId]);
 
   const doReset = () => {
-    clearStorage();
-    setLinkedFile(null);
-    setCourse(sampleCourse);
+    router.push("/courses");
     setConfirmReset(false);
   };
 
@@ -180,11 +250,9 @@ export default function Page() {
       const base = dotIdx >= 0 ? raw.slice(0, dotIdx) : raw;
       fname = `${base}-${Date.now()}${ext}`;
     }
-    setAssets((prev) => {
-      const next = new Map(prev);
-      next.set(fname, { name: fname, size: file.size, blob: file });
-      return next;
-    });
+    const next = new Map(assets);
+    next.set(fname, { name: fname, size: file.size, blob: file });
+    void handleAssetsChange(next);
     return fname;
   };
 
@@ -232,12 +300,12 @@ export default function Page() {
               {linkedSavedAt && <CheckCircle2 size={11} />}
             </span>
           ) : (
-            savedAt && (
-              <span className="flex items-center gap-1 text-2xs text-default-400">
-                <CheckCircle2 size={11} /> auto-saved
-              </span>
-            )
+            <SaveIndicator status={saveStatus} savedAt={savedAt} />
           )}
+        </div>
+
+        <div className="ml-3">
+          <CourseSwitcher currentCourseId={courseId} />
         </div>
 
         <div className="ml-auto flex items-center gap-2">
@@ -331,12 +399,10 @@ export default function Page() {
             setImportWarnings(w);
             setTopErr(null);
             if (olxAssets.size > 0) {
-              setAssets((prev) => {
-                const next = new Map(prev);
-                for (const [name, file] of olxAssets)
-                  next.set(name, { name, size: file.size, blob: file });
-                return next;
-              });
+              const next = new Map(assets);
+              for (const [name, file] of olxAssets)
+                next.set(name, { name, size: file.size, blob: file });
+              void handleAssetsChange(next);
             }
           }}
           onError={setTopErr}
@@ -443,7 +509,7 @@ export default function Page() {
                 </Button>
               </CardHeader>
               <CardContent className="min-h-0 flex-1 overflow-auto p-3">
-                <AssetUploader assets={assets} onChange={setAssets} />
+                <AssetUploader assets={assets} onChange={handleAssetsChange} />
               </CardContent>
             </Card>
             <Card className="flex max-h-[40%] shrink-0 flex-col overflow-hidden">
@@ -483,7 +549,7 @@ export default function Page() {
         onChange={setCourse}
         onClose={() => setInfoOpen(false)}
         assets={assets}
-        onAssetsChange={setAssets}
+        onAssetsChange={handleAssetsChange}
       />
 
 

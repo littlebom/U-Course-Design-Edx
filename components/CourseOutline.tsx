@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   ChevronRight,
   ChevronDown,
-  BookOpen,
   Layers,
   Box,
   FileText,
@@ -257,7 +256,7 @@ export function CourseOutline({ course, onChange, onSelectBlock, onSelectSequent
           <div key={ck}>
             <NameRow
               nodeKey={ck}
-              icon={<BookOpen size={12} />}
+              icon={<Layers size={12} />}
               iconBg="bg-primary"
               name={ch.displayName}
               path={{ kind: "chapter", ci }}

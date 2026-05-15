@@ -30,6 +30,7 @@
     "@tinymce/tinymce-react": "^6.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "idb": "^8.0.3",
     "lucide-react": "^1.14.0",
     "nanoid": "^5.1.11",
     "next": "16.2.4",
