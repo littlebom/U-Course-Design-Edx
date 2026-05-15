@@ -20,9 +20,10 @@ import {
   Check,
   X,
   Pilcrow,
+  BarChart2,
 } from "lucide-react";
 import type { Course, Block, LtiBlock } from "@/lib/schema";
-import { BarChart2, BookOpenCheck, Library, Code2 } from "lucide-react";
+import { getBlockVisuals } from "@/lib/blockMeta";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -295,50 +296,14 @@ export function CourseOutline({ course, onChange, onSelectBlock, onSelectSequent
                                   <div className="ml-3 border-l border-default-200 pl-2">
                                     {v.blocks.map((b, bi) => {
                                       const bk = `${vk}-b${bi}`;
+                                      const vis = getBlockVisuals(b.type);
+                                      const Icon = vis.icon;
                                       return (
                                         <NameRow
                                           key={bk}
                                           nodeKey={bk}
-                                          icon={
-                                            b.type === "html" ? (
-                                              <FileText size={12} />
-                                            ) : b.type === "video" ? (
-                                              <Video size={12} />
-                                            ) : b.type === "discussion" ? (
-                                              <MessageSquare size={12} />
-                                            ) : b.type === "lti" ? (
-                                              <Link2 size={12} />
-                                            ) : b.type === "poll" ? (
-                                              <BarChart2 size={12} />
-                                            ) : b.type === "ora" ? (
-                                              <BookOpenCheck size={12} />
-                                            ) : b.type === "library_content" ? (
-                                              <Library size={12} />
-                                            ) : b.type === "unknown" ? (
-                                              <Code2 size={12} />
-                                            ) : (
-                                              <HelpCircle size={12} />
-                                            )
-                                          }
-                                          iconBg={
-                                            b.type === "html"
-                                              ? "bg-default-500"
-                                              : b.type === "video"
-                                                ? "bg-destructive"
-                                                : b.type === "discussion"
-                                                  ? "bg-success"
-                                                  : b.type === "lti"
-                                                    ? "bg-info"
-                                                    : b.type === "poll"
-                                                      ? "bg-purple-500"
-                                                      : b.type === "ora"
-                                                        ? "bg-rose-600"
-                                                        : b.type === "library_content"
-                                                          ? "bg-teal-600"
-                                                          : b.type === "unknown"
-                                                            ? "bg-slate-500"
-                                                            : "bg-warning"
-                                          }
+                                          icon={<Icon size={12} />}
+                                          iconBg={b.type === "html" ? "bg-default-500" : vis.iconBg}
                                           name={b.displayName}
                                           path={{ kind: "block", ci, si, vi, bi }}
                                           canExpand={false}
