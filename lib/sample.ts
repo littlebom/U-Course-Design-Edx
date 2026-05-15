@@ -9,6 +9,8 @@ export const sampleCourse: Course = {
     language: "th",
     start: "2026-06-01T00:00:00Z",
     selfPaced: true,
+    invitationOnly: false,
+    catalogVisibility: "both",
   },
   about: {
     shortDescription: "เจาะลึกความฉลาดรู้ทางดิจิทัล (DQ) และเตรียมความพร้อมสู่โลกอนาคตที่ขับเคลื่อนด้วย AI",
@@ -18,6 +20,7 @@ export const sampleCourse: Course = {
     duration: "1 week",
     introVideoYoutubeId: "VIDEO_ID_INTRO",
     subtitle: "ก้าวข้ามขีดจำกัด สู่ผู้นำดิจิทัลยุค AI",
+    courseImageName: "",
   },
   grading: {
     cutoffs: { Pass: 0.8 },
@@ -37,8 +40,8 @@ export const sampleCourse: Course = {
             {
               displayName: "บทนำและความหมายของ DQ",
               blocks: [
-                { type: "video", displayName: "ยินดีต้อนรับสู่ GED1001 MC1", youtubeId: "VIDEO_ID_1", downloadAllowed: false },
-                { type: "video", displayName: "DQ 8 Pillars: ทักษะพลเมืองดิจิทัล", youtubeId: "VIDEO_ID_2", downloadAllowed: false },
+                { type: "video", displayName: "ยินดีต้อนรับสู่ GED1001 MC1", youtubeId: "VIDEO_ID_1", mp4Url: "", downloadAllowed: false, transcripts: [], edxVideoId: "" },
+                { type: "video", displayName: "DQ 8 Pillars: ทักษะพลเมืองดิจิทัล", youtubeId: "VIDEO_ID_2", mp4Url: "", downloadAllowed: false, transcripts: [], edxVideoId: "" },
                 { type: "html", displayName: "สรุปกรอบแนวคิด DQ", html: "<h3>Digital Intelligence (DQ) Framework</h3><p>ความเก่งทางเทคนิคเป็นเพียงส่วนหนึ่ง แต่ความฉลาดในการใช้ชีวิตในโลกดิจิทัลคือหัวใจหลักประกอบด้วย 8 ทักษะสำคัญ...</p>" },
                 { type: "html", displayName: "กิจกรรมสะท้อนคิด (Discussion Point)", html: "<div style='background: #f9f9f9; padding: 15px; border-left: 5px solid #2d5f5d;'><p><strong>คำถามชวนคิด:</strong> จาก DQ ทั้ง 8 ด้าน คุณคิดว่าทักษะใดสำคัญที่สุดสำหรับการทำงานในอนาคต? กรุณานำความคิดเห็นของคุณไปแลกเปลี่ยนกับเพื่อนๆ ในเมนู Discussion ของระบบ</p></div>" },
               ],
@@ -51,7 +54,7 @@ export const sampleCourse: Course = {
             {
               displayName: "การประเมินทักษะดิจิทัลตนเอง",
               blocks: [
-                { type: "video", displayName: "แนะนำการใช้เครื่องมือ DQ Diagnostic", youtubeId: "VIDEO_ID_3", downloadAllowed: false },
+                { type: "video", displayName: "แนะนำการใช้เครื่องมือ DQ Diagnostic", youtubeId: "VIDEO_ID_3", mp4Url: "", downloadAllowed: false, transcripts: [], edxVideoId: "" },
                 {
                   type: "problem",
                   displayName: "Quiz: ความเข้าใจพื้นฐาน DQ",
@@ -79,8 +82,8 @@ export const sampleCourse: Course = {
             {
               displayName: "หัวใจของเทคโนโลยีสมัยใหม่",
               blocks: [
-                { type: "video", displayName: "The Cloud & Connectivity", youtubeId: "VIDEO_ID_4", downloadAllowed: false },
-                { type: "video", displayName: "Big Data: พลังแห่งข้อมูล", youtubeId: "VIDEO_ID_5", downloadAllowed: false },
+                { type: "video", displayName: "The Cloud & Connectivity", youtubeId: "VIDEO_ID_4", mp4Url: "", downloadAllowed: false, transcripts: [], edxVideoId: "" },
+                { type: "video", displayName: "Big Data: พลังแห่งข้อมูล", youtubeId: "VIDEO_ID_5", mp4Url: "", downloadAllowed: false, transcripts: [], edxVideoId: "" },
                 {
                   type: "problem",
                   displayName: "Quiz: ระบบนิเวศข้อมูล",
@@ -105,8 +108,8 @@ export const sampleCourse: Course = {
             {
               displayName: "การทำงานของปัญญาประดิษฐ์",
               blocks: [
-                { type: "video", displayName: "How AI Thinks: กระบวนการคิดของ AI", youtubeId: "VIDEO_ID_6", downloadAllowed: false },
-                { type: "video", displayName: "AI & Machine Learning พื้นฐาน", youtubeId: "VIDEO_ID_7", downloadAllowed: false },
+                { type: "video", displayName: "How AI Thinks: กระบวนการคิดของ AI", youtubeId: "VIDEO_ID_6", mp4Url: "", downloadAllowed: false, transcripts: [], edxVideoId: "" },
+                { type: "video", displayName: "AI & Machine Learning พื้นฐาน", youtubeId: "VIDEO_ID_7", mp4Url: "", downloadAllowed: false, transcripts: [], edxVideoId: "" },
                 { type: "html", displayName: "Interactive Visualizer Link", html: "<p>คลิกเพื่อทดลองใช้เครื่องมือ Neural Network Playground เพื่อทำความเข้าใจการเรียนรู้ของเครื่อง</p>" },
               ],
             },
@@ -123,8 +126,8 @@ export const sampleCourse: Course = {
             {
               displayName: "การเตรียมความพร้อมสู่อนาคต",
               blocks: [
-                { type: "video", displayName: "วิเคราะห์ตลาดงานปี 2026", youtubeId: "VIDEO_ID_8", downloadAllowed: false },
-                { type: "video", displayName: "Case Study: โลกที่เปลี่ยนไป", youtubeId: "VIDEO_ID_9", downloadAllowed: false },
+                { type: "video", displayName: "วิเคราะห์ตลาดงานปี 2026", youtubeId: "VIDEO_ID_8", mp4Url: "", downloadAllowed: false, transcripts: [], edxVideoId: "" },
+                { type: "video", displayName: "Case Study: โลกที่เปลี่ยนไป", youtubeId: "VIDEO_ID_9", mp4Url: "", downloadAllowed: false, transcripts: [], edxVideoId: "" },
               ],
             },
           ],
@@ -135,7 +138,7 @@ export const sampleCourse: Course = {
             {
               displayName: "บทสรุปและจริยธรรมเทคโนโลยี",
               blocks: [
-                { type: "video", displayName: "Co-pilot Mindset: ทำงานร่วมกับ AI", youtubeId: "VIDEO_ID_10", downloadAllowed: false },
+                { type: "video", displayName: "Co-pilot Mindset: ทำงานร่วมกับ AI", youtubeId: "VIDEO_ID_10", mp4Url: "", downloadAllowed: false, transcripts: [], edxVideoId: "" },
                 {
                   type: "problem",
                   displayName: "Final Exam: Micro-Course 1",
@@ -149,7 +152,7 @@ export const sampleCourse: Course = {
                   maxAttempts: 2,
                   showAnswer: "finished",
                 },
-                { type: "video", displayName: "บทสรุปและแนะนำรายวิชาถัดไป", youtubeId: "VIDEO_ID_FINALE", downloadAllowed: false },
+                { type: "video", displayName: "บทสรุปและแนะนำรายวิชาถัดไป", youtubeId: "VIDEO_ID_FINALE", mp4Url: "", downloadAllowed: false, transcripts: [], edxVideoId: "" },
               ],
             },
           ],

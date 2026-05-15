@@ -10,6 +10,8 @@ import {
   FileText,
   HelpCircle,
   Video,
+  MessageSquare,
+  Link2,
   Trash2,
   ArrowUp,
   ArrowDown,
@@ -17,8 +19,10 @@ import {
   Plus,
   Check,
   X,
+  Pilcrow,
 } from "lucide-react";
-import type { Course, Block } from "@/lib/schema";
+import type { Course, Block, LtiBlock } from "@/lib/schema";
+import { BarChart2, BookOpenCheck, Library, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -32,9 +36,11 @@ type Props = {
   course: Course;
   onChange: (next: Course) => void;
   onSelectBlock?: (path: { ci: number; si: number; vi: number; bi: number }) => void;
+  onSelectSequential?: (path: { ci: number; si: number }) => void;
+  onMarkdownImport?: () => void;
 };
 
-export function CourseOutline({ course, onChange, onSelectBlock }: Props) {
+export function CourseOutline({ course, onChange, onSelectBlock, onSelectSequential, onMarkdownImport }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set(["c0", "c0-s0", "c0-s0-v0"]));
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -118,10 +124,15 @@ export function CourseOutline({ course, onChange, onSelectBlock }: Props) {
         blocks: [emptyHtml()],
       }),
     );
-  const addBlock = (ci: number, si: number, vi: number, type: "html" | "problem" | "video") =>
+  const addBlock = (ci: number, si: number, vi: number, type: "html" | "problem" | "video" | "discussion" | "lti" | "poll") =>
     update((c) =>
       c.chapters[ci].sequentials[si].verticals[vi].blocks.push(
-        type === "html" ? emptyHtml() : type === "video" ? emptyVideo() : emptyProblem(),
+        type === "html" ? emptyHtml()
+        : type === "video" ? emptyVideo()
+        : type === "discussion" ? emptyDiscussion()
+        : type === "lti" ? emptyLti()
+        : type === "poll" ? emptyPoll()
+        : emptyProblem(),
       ),
     );
 
@@ -228,7 +239,12 @@ export function CourseOutline({ course, onChange, onSelectBlock }: Props) {
 
   return (
     <div className="space-y-1">
-      <div className="mb-2 flex items-center justify-end">
+      <div className="mb-2 flex items-center justify-end gap-2">
+        {onMarkdownImport && (
+          <Button size="sm" variant="outline" onClick={onMarkdownImport} title="Import โครงสร้างจาก Markdown">
+            <Pilcrow size={12} className="me-1" /> Markdown
+          </Button>
+        )}
         <Button size="sm" color="primary" onClick={addChapter}>
           <Plus size={12} className="me-1" /> เพิ่มบท
         </Button>
@@ -259,6 +275,7 @@ export function CourseOutline({ course, onChange, onSelectBlock }: Props) {
                         name={seq.displayName}
                         path={{ kind: "sequential", ci, si }}
                         canExpand
+                        onClick={() => onSelectSequential?.({ ci, si })}
                       />
                       {expanded.has(sk) && (
                         <div className="ml-3 border-l border-default-200 pl-2">
@@ -287,6 +304,18 @@ export function CourseOutline({ course, onChange, onSelectBlock }: Props) {
                                               <FileText size={12} />
                                             ) : b.type === "video" ? (
                                               <Video size={12} />
+                                            ) : b.type === "discussion" ? (
+                                              <MessageSquare size={12} />
+                                            ) : b.type === "lti" ? (
+                                              <Link2 size={12} />
+                                            ) : b.type === "poll" ? (
+                                              <BarChart2 size={12} />
+                                            ) : b.type === "ora" ? (
+                                              <BookOpenCheck size={12} />
+                                            ) : b.type === "library_content" ? (
+                                              <Library size={12} />
+                                            ) : b.type === "unknown" ? (
+                                              <Code2 size={12} />
                                             ) : (
                                               <HelpCircle size={12} />
                                             )
@@ -296,7 +325,19 @@ export function CourseOutline({ course, onChange, onSelectBlock }: Props) {
                                               ? "bg-default-500"
                                               : b.type === "video"
                                                 ? "bg-destructive"
-                                                : "bg-warning"
+                                                : b.type === "discussion"
+                                                  ? "bg-success"
+                                                  : b.type === "lti"
+                                                    ? "bg-info"
+                                                    : b.type === "poll"
+                                                      ? "bg-purple-500"
+                                                      : b.type === "ora"
+                                                        ? "bg-rose-600"
+                                                        : b.type === "library_content"
+                                                          ? "bg-teal-600"
+                                                          : b.type === "unknown"
+                                                            ? "bg-slate-500"
+                                                            : "bg-warning"
                                           }
                                           name={b.displayName}
                                           path={{ kind: "block", ci, si, vi, bi }}
@@ -315,6 +356,15 @@ export function CourseOutline({ course, onChange, onSelectBlock }: Props) {
                                       </AddPill>
                                       <AddPill onClick={() => addBlock(ci, si, vi, "problem")}>
                                         <HelpCircle size={11} /> Problem
+                                      </AddPill>
+                                      <AddPill onClick={() => addBlock(ci, si, vi, "discussion")}>
+                                        <MessageSquare size={11} /> Discussion
+                                      </AddPill>
+                                      <AddPill onClick={() => addBlock(ci, si, vi, "lti")}>
+                                        <Link2 size={11} /> LTI
+                                      </AddPill>
+                                      <AddPill onClick={() => addBlock(ci, si, vi, "poll")}>
+                                        <BarChart2 size={11} /> Poll
                                       </AddPill>
                                     </div>
                                   </div>
@@ -389,7 +439,7 @@ function emptyHtml(): Block {
   return { type: "html", displayName: "HTML ใหม่", html: "<p>...</p>" };
 }
 function emptyVideo(): Block {
-  return { type: "video", displayName: "Video ใหม่", youtubeId: "dQw4w9WgXcQ", downloadAllowed: false };
+  return { type: "video", displayName: "Video ใหม่", youtubeId: "dQw4w9WgXcQ", mp4Url: "", downloadAllowed: false, transcripts: [], edxVideoId: "" };
 }
 function emptyProblem(): Block {
   return {
@@ -401,5 +451,41 @@ function emptyProblem(): Block {
       { text: "ตัวเลือก 1", correct: true },
       { text: "ตัวเลือก 2", correct: false },
     ],
+  };
+}
+function emptyDiscussion(): Block {
+  return {
+    type: "discussion",
+    displayName: "Discussion ใหม่",
+    discussionCategory: "General",
+    discussionTarget: "",
+  };
+}
+function emptyLti(): Block {
+  return {
+    type: "lti",
+    displayName: "LTI Block ใหม่",
+    ltiVersion: "lti_1p3",
+    launchUrl: "",
+    oidcUrl: "",
+    keysetUrl: "",
+    hasScore: false,
+    weight: 1.0,
+    launchTarget: "new_window",
+    buttonText: "",
+  };
+}
+function emptyPoll(): Block {
+  return {
+    type: "poll",
+    displayName: "Poll ใหม่",
+    question: "คำถามของคุณ?",
+    answers: [
+      { id: "A", label: "ใช่", img: "" },
+      { id: "B", label: "ไม่ใช่", img: "" },
+    ],
+    privateResults: false,
+    maxSubmissions: 1,
+    feedback: "",
   };
 }

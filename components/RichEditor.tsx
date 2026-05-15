@@ -128,7 +128,7 @@ export function RichEditor({ value, onChange, height = 420, assets, onAddAsset }
         link_default_target: "_blank",
         urlconverter_callback: (url: string) => url,
         content_style:
-          "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.6;padding:12px}" +
+          "body{font-family:'Sarabun',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.6;padding:12px}" +
           "code{background:#f3f4f6;padding:2px 4px;border-radius:3px}" +
           "pre{background:#1e293b;color:#f8fafc;padding:12px;border-radius:6px;overflow:auto}",
       }}

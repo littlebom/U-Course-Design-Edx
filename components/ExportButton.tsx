@@ -57,7 +57,7 @@ export function ExportButton({ course, assets, disabled }: Props) {
         )}
         Export
       </Button>
-      {err && <div className="max-w-xs text-right text-[11px] text-destructive">{err}</div>}
+      {err && <div className="max-w-xs text-right text-2xs text-destructive">{err}</div>}
     </div>
   );
 }

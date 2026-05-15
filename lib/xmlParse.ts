@@ -1,5 +1,10 @@
 import { courseSchema, type Course } from "./schema";
 
+export interface ParseXmlResult {
+  course: Course;
+  warnings: string[];
+}
+
 function attr(el: Element, name: string): string {
   return el.getAttribute(name) ?? "";
 }
@@ -9,8 +14,9 @@ function boolAttr(el: Element, name: string, def = false): boolean {
   return v === null ? def : v === "true";
 }
 
-function parseBlock(el: Element) {
+function parseBlock(el: Element, warnings: string[]): object | null {
   const tag = el.tagName;
+  const name = el.getAttribute("displayName") || `<${tag}>`;
 
   if (tag === "html") {
     return {
@@ -35,30 +41,45 @@ function parseBlock(el: Element) {
     const choiceEls = el.querySelectorAll(":scope > choices > choice");
     const maxAttemptsRaw = el.getAttribute("maxAttempts");
     const showAnswerRaw = el.getAttribute("showAnswer");
+
+    const choices = Array.from(choiceEls).map((c) => ({
+      text: c.textContent ?? "",
+      correct: c.getAttribute("correct") === "true",
+    }));
+
+    // ถ้า choices < 2 ให้เติม placeholder แทนการ throw
+    if (choices.length < 2) {
+      warnings.push(`Problem "${name}": พบตัวเลือก ${choices.length} ข้อ (ต้องการอย่างน้อย 2) — เติม placeholder อัตโนมัติ`);
+      while (choices.length < 2) {
+        choices.push({ text: `ตัวเลือก ${choices.length + 1} (placeholder)`, correct: choices.length === 0 });
+      }
+    }
+
+    const question = questionEl?.textContent ?? "";
     return {
       type: "problem" as const,
       displayName: attr(el, "displayName"),
       problemType: (el.getAttribute("problemType") ?? "multiplechoice") as
         | "multiplechoice"
         | "checkbox",
-      question: questionEl?.textContent ?? "",
-      choices: Array.from(choiceEls).map((c) => ({
-        text: c.textContent ?? "",
-        correct: c.getAttribute("correct") === "true",
-      })),
+      question: question || `<p>${name}</p>`,
+      choices,
       ...(maxAttemptsRaw !== null ? { maxAttempts: Number(maxAttemptsRaw) } : {}),
       ...(showAnswerRaw !== null ? { showAnswer: showAnswerRaw } : {}),
       ...(explanationEl?.textContent ? { explanation: explanationEl.textContent } : {}),
     };
   }
 
-  throw new Error(`ไม่รู้จัก block type: <${tag}>`);
+  warnings.push(`ข้าม block ไม่รู้จัก: <${tag} displayName="${name}">`);
+  return null;
 }
 
-export function parseXmlCourse(xmlText: string): Course {
+export function parseXmlCourse(xmlText: string): ParseXmlResult {
+  const warnings: string[] = [];
+
   const doc = new DOMParser().parseFromString(xmlText, "application/xml");
 
-  const parseError = doc.querySelector("parsererror");
+  const parseError = doc.querySelector("parseerror, parsererror");
   if (parseError) {
     throw new Error(`XML ไม่ถูกต้อง: ${parseError.textContent?.slice(0, 200)}`);
   }
@@ -99,18 +120,48 @@ export function parseXmlCourse(xmlText: string): Course {
       }))
     : [];
 
-  // chapters
-  const chapters = Array.from(root.querySelectorAll(":scope > chapter")).map((chEl) => ({
-    displayName: attr(chEl, "displayName"),
-    sequentials: Array.from(chEl.querySelectorAll(":scope > sequential")).map((seqEl) => ({
-      displayName: attr(seqEl, "displayName"),
-      ...(seqEl.hasAttribute("format") ? { format: attr(seqEl, "format") } : {}),
-      verticals: Array.from(seqEl.querySelectorAll(":scope > vertical")).map((vEl) => ({
-        displayName: attr(vEl, "displayName"),
-        blocks: Array.from(vEl.children).map(parseBlock),
-      })),
-    })),
-  }));
+  // chapters — ข้าม vertical/sequential/chapter ที่ว่างเปล่าหลัง sanitize
+  const chapters = Array.from(root.querySelectorAll(":scope > chapter")).flatMap((chEl) => {
+    const chName = attr(chEl, "displayName") || "Chapter";
+
+    const sequentials = Array.from(chEl.querySelectorAll(":scope > sequential")).flatMap((seqEl) => {
+      const seqName = attr(seqEl, "displayName") || "Sequential";
+
+      const verticals = Array.from(seqEl.querySelectorAll(":scope > vertical")).flatMap((vEl) => {
+        const vName = attr(vEl, "displayName") || "Vertical";
+
+        const blocks = Array.from(vEl.children)
+          .map((b) => parseBlock(b, warnings))
+          .filter((b): b is object => b !== null);
+
+        if (blocks.length === 0) {
+          warnings.push(`ข้าม vertical "${vName}" ใน "${seqName}": ไม่มี block ที่ถูกต้อง`);
+          return [];
+        }
+        return [{ displayName: vName, blocks }];
+      });
+
+      if (verticals.length === 0) {
+        warnings.push(`ข้าม sequential "${seqName}" ใน "${chName}": ไม่มี vertical ที่ถูกต้อง`);
+        return [];
+      }
+      return [{
+        displayName: seqName,
+        ...(seqEl.hasAttribute("format") ? { format: attr(seqEl, "format") } : {}),
+        verticals,
+      }];
+    });
+
+    if (sequentials.length === 0) {
+      warnings.push(`ข้าม chapter "${chName}": ไม่มี sequential ที่ถูกต้อง`);
+      return [];
+    }
+    return [{ displayName: chName, sequentials }];
+  });
+
+  if (chapters.length === 0) {
+    throw new Error("ไม่พบ chapter ที่ถูกต้องในไฟล์ กรุณาตรวจสอบโครงสร้าง XML");
+  }
 
   const raw = {
     course: {
@@ -129,7 +180,17 @@ export function parseXmlCourse(xmlText: string): Course {
 
   const result = courseSchema.safeParse(raw);
   if (!result.success) {
-    throw new Error(`Schema ไม่ถูกต้อง: ${result.error.issues[0]?.message ?? "unknown"}`);
+    // พยายาม report ทุก issue แต่ไม่ throw — ถ้า parse ได้บางส่วนก็ยังดี
+    for (const issue of result.error.issues) {
+      const path = issue.path.join(" › ");
+      warnings.push(`Schema warning: ${issue.message}${path ? ` (ที่: ${path})` : ""}`);
+    }
+    // ถ้า parse ไม่ได้เลย throw
+    throw new Error(
+      `Schema ไม่ถูกต้อง: ${result.error.issues[0]?.message ?? "unknown"} — ` +
+      `ตรวจสอบ ${result.error.issues.length} รายการใน warnings`
+    );
   }
-  return result.data;
+
+  return { course: result.data, warnings };
 }

@@ -3,18 +3,17 @@
 import { useCallback, useImperativeHandle, forwardRef } from "react";
 import { useDropzone } from "react-dropzone";
 import { type Course } from "@/lib/schema";
-import { parseXmlCourse } from "@/lib/xmlParse";
+import { parseOlxTar } from "@/lib/olxTarParse";
 
 type Props = {
-  onLoad: (course: Course) => void;
+  onLoad: (course: Course, warnings: string[], assets: Map<string, File>) => void;
   onError: (msg: string) => void;
-  onWarnings?: (warnings: string[]) => void;
 };
 
-export type JsonDropzoneHandle = { open: () => void };
+export type OlxDropzoneHandle = { open: () => void };
 
-export const JsonDropzone = forwardRef<JsonDropzoneHandle, Props>(function JsonDropzone(
-  { onLoad, onError, onWarnings },
+export const OlxDropzone = forwardRef<OlxDropzoneHandle, Props>(function OlxDropzone(
+  { onLoad, onError },
   ref,
 ) {
   const onDrop = useCallback(
@@ -22,20 +21,22 @@ export const JsonDropzone = forwardRef<JsonDropzoneHandle, Props>(function JsonD
       const f = files[0];
       if (!f) return;
       try {
-        const text = await f.text();
-        const { course, warnings } = parseXmlCourse(text);
-        onLoad(course);
-        if (warnings.length > 0) onWarnings?.(warnings);
+        const buffer = await f.arrayBuffer();
+        const { course, warnings, assets } = await parseOlxTar(buffer);
+        onLoad(course, warnings, assets);
       } catch (e) {
         onError(e instanceof Error ? e.message : String(e));
       }
     },
-    [onLoad, onError, onWarnings],
+    [onLoad, onError],
   );
 
   const { getRootProps, getInputProps, open } = useDropzone({
     onDrop,
-    accept: { "application/xml": [".xml"], "text/xml": [".xml"] },
+    accept: {
+      "application/gzip": [".gz", ".tar.gz"],
+      "application/x-tar": [".tar"],
+    },
     multiple: false,
     noClick: true,
   });

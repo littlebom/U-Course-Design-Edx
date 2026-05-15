@@ -40,7 +40,8 @@ export async function openCourseFile(): Promise<{
   const file = await handle.getFile();
   const text = (await file.text()).trim();
   if (!text) return { course: null, handle };
-  return { course: parseXmlCourse(text), handle };
+  const { course } = parseXmlCourse(text);
+  return { course, handle };
 }
 
 export async function saveAsCourseFile(course: Course): Promise<FileSystemFileHandle | null> {

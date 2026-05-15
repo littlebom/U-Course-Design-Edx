@@ -60,6 +60,7 @@
             <choice correct="false">การมีตัวตนในโลกออนไลน์ที่โดดเด่น</choice>
             <choice correct="true">การเป็นพลเมืองดิจิทัลที่มีจริยธรรมและพร้อมรับการเปลี่ยนแปลง</choice>
           </choices>
+          <explanation>DQ มุ่งเน้นการสร้างพลเมืองดิจิทัลที่มีความรับผิดชอบ มีจริยธรรม และสามารถปรับตัวรับการเปลี่ยนแปลงของเทคโนโลยีได้อย่างยั่งยืน</explanation>
         </problem>
       </vertical>
     </sequential>
@@ -88,6 +89,7 @@
             <choice correct="false">Vague (ความคลุมเครือของที่มา)</choice>
             <choice correct="true">Variety (ความหลากหลายของรูปแบบ)</choice>
           </choices>
+          <explanation>Big Data มีองค์ประกอบหลัก 3V ได้แก่ Volume (ปริมาณ), Velocity (ความเร็ว) และ Variety (ความหลากหลาย) — "Vague" ไม่ใช่คำศัพท์ใน Big Data framework</explanation>
         </problem>
       </vertical>
     </sequential>
@@ -131,6 +133,7 @@
             <choice correct="false">ช่วยให้ประหยัดงบประมาณในการจ้างงานบุคลากรไอที</choice>
             <choice correct="false">ช่วยลดขั้นตอนการทำงานให้เหลือเพียงอย่างเดียว</choice>
           </choices>
+          <explanation>Agile Mindset เน้นความยืดหยุ่นและการปรับตัวอย่างรวดเร็ว ซึ่งสำคัญมากในยุค Digital Transformation ที่ข้อมูลและสถานการณ์เปลี่ยนแปลงตลอดเวลา</explanation>
         </problem>
         <video displayName="บทสรุปและแนะนำรายวิชาถัดไป" youtubeId="VIDEO_ID_FINALE" downloadAllowed="false"/>
       </vertical>
