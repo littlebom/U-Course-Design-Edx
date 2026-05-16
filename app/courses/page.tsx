@@ -90,7 +90,7 @@ export default function CoursesPage() {
             <Button variant="ghost" size="sm" onClick={() => downloadBackup()} title="สำรองข้อมูลทุกคอร์ส">
               <Archive size={14} className="me-1.5" /> Backup
             </Button>
-            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-default-700 hover:bg-default hover:text-default-foreground" title="กู้คืนจากไฟล์ backup">
+            <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4" title="กู้คืนจากไฟล์ backup">
               <ArchiveRestore size={14} /> Restore
               <input
                 type="file"
@@ -110,7 +110,7 @@ export default function CoursesPage() {
                 }}
               />
             </label>
-            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-default px-3 py-1.5 text-sm text-default hover:bg-default hover:text-default-foreground">
+            <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-default px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4">
               <Upload size={14} /> Import JSON
               <input
                 type="file"
@@ -312,7 +312,7 @@ function EmptyState({ onCreate, inTrash }: { onCreate: () => void; inTrash: bool
         {inTrash ? "คอร์สที่ลบจะอยู่ที่นี่ 7 วันก่อนลบถาวร" : "เริ่มต้นโดยสร้างรายวิชาใหม่"}
       </p>
       {!inTrash && (
-        <Button onClick={onCreate}>
+        <Button size="sm" onClick={onCreate}>
           <Plus size={14} className="me-1" /> สร้างรายวิชา
         </Button>
       )}

@@ -394,7 +394,7 @@ function PageInner() {
             {importWarnings.map((w, i) => <li key={i} className="break-words">{w}</li>)}
           </ul>
           <DialogFooter>
-            <Button onClick={() => setImportWarnings([])}>ปิด</Button>
+            <Button size="sm" onClick={() => setImportWarnings([])}>ปิด</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
