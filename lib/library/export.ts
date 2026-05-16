@@ -121,9 +121,20 @@ function entityFileSlug(e: LibraryEntity): string {
 // Ulmo's importer rejects empty strings for meta.created_by / created_by_email /
 // origin_server with "This field may not be blank.", so we substitute safe
 // placeholders when the user hasn't provided values. Description is allowed to
-// be blank.
+// be blank. Email goes through a separate validator because Ulmo also runs
+// Django's EmailField check ("Enter a valid email address.").
 function nonBlank(s: string | undefined, fallback: string): string {
   return s && s.trim() ? s : fallback;
+}
+
+const VALID_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function safeEmail(s: string | undefined): string {
+  const trimmed = s?.trim();
+  if (trimmed && VALID_EMAIL.test(trimmed)) return trimmed;
+  // .invalid is the IANA-reserved TLD for "guaranteed not to exist" — passes
+  // RFC 5322 / Django EmailField but won't collide with a real address.
+  return "olx-builder@example.invalid";
 }
 
 function buildPackageToml(lib: Library): string {
@@ -131,7 +142,7 @@ function buildPackageToml(lib: Library): string {
     meta: {
       format_version: lib.meta.formatVersion,
       created_by: nonBlank(lib.meta.createdBy, "olx-builder"),
-      created_by_email: nonBlank(lib.meta.createdByEmail, "olx-builder@local"),
+      created_by_email: safeEmail(lib.meta.createdByEmail),
       created_at: lib.meta.createdAt ?? isoNow(),
       origin_server: nonBlank(lib.meta.originServer, "olx-builder.local"),
     },
