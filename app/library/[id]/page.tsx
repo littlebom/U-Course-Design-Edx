@@ -94,7 +94,10 @@ export default function LibraryEditorPage() {
 
   const handleExport = async () => {
     if (!library) return;
-    await downloadLibraryZip(library, assets);
+    const warnings = await downloadLibraryZip(library, assets);
+    if (warnings.length > 0) {
+      alert(`Export สำเร็จ — มีคำเตือน ${warnings.length} รายการ:\n\n${warnings.join("\n")}`);
+    }
   };
 
   if (!library || !libraryId) {

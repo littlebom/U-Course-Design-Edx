@@ -19,6 +19,64 @@ import {
 } from "./schema";
 import type { Block } from "../schema";
 
+export interface LibraryExportWarnings {
+  warnings: string[];
+}
+
+// Walks the library and reports issues that would break Ulmo import.
+// Returns the same library (possibly with auto-cleaned children) plus warning strings.
+function validateAndClean(library: Library): { library: Library; warnings: string[] } {
+  const warnings: string[] = [];
+  const validKeys = new Set(library.entities.map((e) => e.key));
+  const cleaned = structuredClone(library);
+
+  // 1. Strip dangling children refs from containers
+  for (const e of cleaned.entities) {
+    if (!isContainer(e)) continue;
+    const before = e.children.length;
+    e.children = e.children.filter((k) => {
+      if (validKeys.has(k)) return true;
+      warnings.push(`Container "${e.title}": ลบ reference ของ entity ที่ไม่มีอยู่ "${k}"`);
+      return false;
+    });
+    if (e.children.length !== before) {
+      // tracked above
+    }
+  }
+
+  // 2. Strip dangling entity refs from collections
+  for (const c of cleaned.collections) {
+    const before = c.entities.length;
+    c.entities = c.entities.filter((k) => {
+      if (validKeys.has(k)) return true;
+      warnings.push(`Collection "${c.title}": ลบ reference ของ entity ที่ไม่มีอยู่ "${k}"`);
+      return false;
+    });
+    if (c.entities.length !== before) {
+      // tracked above
+    }
+  }
+
+  // 3. Detect duplicate entity keys (would corrupt zip)
+  const seen = new Set<string>();
+  for (const e of cleaned.entities) {
+    if (seen.has(e.key)) {
+      warnings.push(`Entity key ซ้ำ: "${e.key}" — Ulmo จะ reject`);
+    }
+    seen.add(e.key);
+  }
+
+  // 4. Sanity check: blank required fields
+  if (!cleaned.learningPackage.title.trim()) {
+    warnings.push(`Library title ว่าง — กรุณากรอกชื่อ Library ใน Library Info`);
+  }
+  if (!/^lib:[^:]+:[^:]+$/.test(cleaned.learningPackage.key)) {
+    warnings.push(`Library key "${cleaned.learningPackage.key}" ไม่ตรงรูปแบบ lib:Org:Code — Ulmo อาจ reject`);
+  }
+
+  return { library: cleaned, warnings };
+}
+
 export interface LibraryExportInput {
   library: Library;
   assets?: Map<string, File>;            // key = "<uuid>/<filename>"
@@ -140,53 +198,15 @@ function buildCollectionToml(c: Library["collections"][number]): string {
   return stringifyToml(obj) + "\n";
 }
 
-// Build the entire .zip and return its bytes
-export function buildLibraryZip({ library, assets }: LibraryExportInput): Uint8Array {
+// Build the .zip — async variant resolves File assets into Uint8Array before zipping.
+// Returns both the zip bytes and any validation warnings (e.g. dangling refs we stripped).
+export async function buildLibraryZipAsync(
+  { library, assets }: LibraryExportInput,
+): Promise<{ bytes: Uint8Array; warnings: string[] }> {
   const files: Record<string, Uint8Array> = {};
 
-  files["package.toml"] = strToU8(buildPackageToml(library));
-
-  // Collections
-  for (const c of library.collections) {
-    files[`collections/${c.key}.toml`] = strToU8(buildCollectionToml(c));
-  }
-
-  // Entities
-  for (const e of library.entities) {
-    if (isContainer(e)) {
-      files[`entities/${entityFileSlug(e)}.toml`] = strToU8(buildContainerToml(e));
-    } else if (isXBlock(e)) {
-      const base = `entities/xblock.v1/${e.xblockType}/${e.uuid}`;
-      files[`${base}.toml`] = strToU8(buildXBlockToml(e));
-      const versionDir = `${base}/component_versions/v${e.draftVersion}`;
-      files[`${versionDir}/block.xml`] = strToU8(blockToXml(e.block, e.uuid));
-
-      // Static assets for this xblock — keys formatted as "<uuid>/<filename>"
-      if (assets) {
-        const prefix = `${e.uuid}/`;
-        for (const [k, file] of assets) {
-          if (!k.startsWith(prefix)) continue;
-          const fname = k.slice(prefix.length);
-          if (!fname) continue;
-          // synchronous read via reader is awkward; the caller is expected to provide File whose
-          // arrayBuffer was already loaded. We rely on Blob.arrayBuffer() being available.
-          // For simplicity we just write a marker and let the caller post-process — but since
-          // we need synchronous bytes here, we require the caller to provide pre-resolved bytes.
-          // Workaround: store the File and let buildLibraryZipAsync handle it.
-          // Skip in sync path:
-          void file;
-          void fname;
-        }
-      }
-    }
-  }
-
-  return zipSync(files, { level: 6 });
-}
-
-// Async variant that resolves File assets into Uint8Array before zipping.
-export async function buildLibraryZipAsync({ library, assets }: LibraryExportInput): Promise<Uint8Array> {
-  const files: Record<string, Uint8Array> = {};
+  const { library: cleaned, warnings } = validateAndClean(library);
+  library = cleaned;
 
   files["package.toml"] = strToU8(buildPackageToml(library));
 
@@ -216,18 +236,18 @@ export async function buildLibraryZipAsync({ library, assets }: LibraryExportInp
     }
   }
 
-  return zipSync(files, { level: 6 });
+  return { bytes: zipSync(files, { level: 6 }), warnings };
 }
 
-export function downloadLibraryZip(library: Library, assets?: Map<string, File>): Promise<void> {
-  return buildLibraryZipAsync({ library, assets }).then((bytes) => {
-    const blob = new Blob([new Uint8Array(bytes).buffer], { type: "application/zip" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const slug = library.learningPackage.key.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-    a.href = url;
-    a.download = `${slug}-${new Date().toISOString().slice(0, 10)}.zip`;
-    a.click();
-    URL.revokeObjectURL(url);
-  });
+export async function downloadLibraryZip(library: Library, assets?: Map<string, File>): Promise<string[]> {
+  const { bytes, warnings } = await buildLibraryZipAsync({ library, assets });
+  const blob = new Blob([new Uint8Array(bytes).buffer], { type: "application/zip" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const slug = library.learningPackage.key.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+  a.href = url;
+  a.download = `${slug}-${new Date().toISOString().slice(0, 10)}.zip`;
+  a.click();
+  URL.revokeObjectURL(url);
+  return warnings;
 }

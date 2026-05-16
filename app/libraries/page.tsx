@@ -79,7 +79,10 @@ export default function LibrariesPage() {
 
   const handleExport = async (rec: LibraryRecord) => {
     const assets = await loadLibraryAssetsAsMap(rec.id);
-    await downloadLibraryZip(rec.library, assets);
+    const warnings = await downloadLibraryZip(rec.library, assets);
+    if (warnings.length > 0) {
+      alert(`Export สำเร็จ — มีคำเตือน ${warnings.length} รายการ:\n\n${warnings.join("\n")}`);
+    }
   };
 
   return (
