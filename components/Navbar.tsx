@@ -1,9 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { ArrowLeft, GraduationCap } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { ArrowLeft, GraduationCap, BookOpen, Library as LibIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 type Props = {
   /** Page-identity content (title, course name, breadcrumb…) shown left of the divider */
@@ -21,7 +22,11 @@ type Props = {
 // area, action cluster on the right.
 export function Navbar({ brand, left, right, showBackToCourses = false }: Props) {
   const router = useRouter();
+  const pathname = usePathname() ?? "";
   const goHome = () => router.push("/courses");
+
+  // Determine active mode: courses or libraries
+  const inLibrary = pathname.startsWith("/library") || pathname.startsWith("/libraries");
 
   return (
     <header className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-header px-4 py-2.5 shadow-base">
@@ -29,11 +34,35 @@ export function Navbar({ brand, left, right, showBackToCourses = false }: Props)
       <button
         type="button"
         onClick={goHome}
-        title="กลับไปยังรายวิชาทั้งหมด"
+        title="หน้าแรก"
         className="grid size-8 place-items-center rounded-md bg-primary text-primary-foreground shadow-base transition-opacity hover:opacity-80"
       >
         <GraduationCap size={18} />
       </button>
+
+      {/* Mode switcher — Courses vs Libraries */}
+      <div className="ml-1 flex items-center gap-0.5 rounded-md bg-default-100 p-0.5">
+        <button
+          type="button"
+          onClick={() => router.push("/courses")}
+          className={cn(
+            "inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors",
+            !inLibrary ? "bg-card text-default-700 shadow-sm" : "text-default-500 hover:text-default-700",
+          )}
+        >
+          <BookOpen size={11} /> Courses
+        </button>
+        <button
+          type="button"
+          onClick={() => router.push("/libraries")}
+          className={cn(
+            "inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors",
+            inLibrary ? "bg-card text-default-700 shadow-sm" : "text-default-500 hover:text-default-700",
+          )}
+        >
+          <LibIcon size={11} /> Libraries
+        </button>
+      </div>
 
       {showBackToCourses && (
         <Button

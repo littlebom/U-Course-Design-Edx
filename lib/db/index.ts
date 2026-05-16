@@ -2,6 +2,8 @@
 
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { CourseRecord, AssetRecord, MetaKey } from "./types";
+import type { LibraryRecord } from "./libraries";
+import type { LibraryAssetRecord } from "./library-assets";
 
 interface OlxBuilderDB extends DBSchema {
   courses: {
@@ -14,6 +16,16 @@ interface OlxBuilderDB extends DBSchema {
     value: AssetRecord;
     indexes: { "by-course": string };
   };
+  libraries: {
+    key: string;
+    value: LibraryRecord;
+    indexes: { "by-updatedAt": number };
+  };
+  library_assets: {
+    key: [string, string]; // [libraryId, assetKey]
+    value: LibraryAssetRecord;
+    indexes: { "by-library": string };
+  };
   meta: {
     key: MetaKey;
     value: { key: MetaKey; value: unknown };
@@ -21,7 +33,7 @@ interface OlxBuilderDB extends DBSchema {
 }
 
 const DB_NAME = "olx-builder";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<OlxBuilderDB>> | null = null;
 
@@ -31,17 +43,19 @@ export function getDb(): Promise<IDBPDatabase<OlxBuilderDB>> {
   }
   if (!dbPromise) {
     dbPromise = openDB<OlxBuilderDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains("courses")) {
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1) {
           const courses = db.createObjectStore("courses", { keyPath: "id" });
           courses.createIndex("by-updatedAt", "updatedAt");
-        }
-        if (!db.objectStoreNames.contains("assets")) {
           const assets = db.createObjectStore("assets", { keyPath: ["courseId", "fileName"] });
           assets.createIndex("by-course", "courseId");
-        }
-        if (!db.objectStoreNames.contains("meta")) {
           db.createObjectStore("meta", { keyPath: "key" });
+        }
+        if (oldVersion < 2) {
+          const libs = db.createObjectStore("libraries", { keyPath: "id" });
+          libs.createIndex("by-updatedAt", "updatedAt");
+          const libAssets = db.createObjectStore("library_assets", { keyPath: ["libraryId", "assetKey"] });
+          libAssets.createIndex("by-library", "libraryId");
         }
       },
     });
