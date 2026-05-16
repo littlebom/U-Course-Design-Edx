@@ -71,8 +71,10 @@ export function getDb(): Promise<IDBPDatabase<OlxBuilderDB>> {
         window.location.reload();
       };
     }
+    console.info("[db] opening", DB_NAME, "v" + DB_VERSION);
     dbPromise = withTimeout(openDB<OlxBuilderDB>(DB_NAME, DB_VERSION, {
-      upgrade(db, oldVersion) {
+      upgrade(db, oldVersion, newVersion) {
+        console.info("[db] upgrade", oldVersion, "→", newVersion);
         if (oldVersion < 1) {
           const courses = db.createObjectStore("courses", { keyPath: "id" });
           courses.createIndex("by-updatedAt", "updatedAt");
@@ -90,9 +92,10 @@ export function getDb(): Promise<IDBPDatabase<OlxBuilderDB>> {
             libAssets.createIndex("by-library", "libraryId");
           }
         }
+        console.info("[db] upgrade done; stores:", Array.from(db.objectStoreNames));
       },
       blocked(currentVersion, blockedVersion) {
-        // Another tab is holding the older DB open. Prompt user to close it.
+        console.warn("[db] BLOCKED — another tab holds", currentVersion, "blocking", blockedVersion);
         if (typeof window !== "undefined") {
           alert(
             `กรุณาปิดแท็บอื่นของแอปนี้ก่อน — มีแท็บเก่าค้างอยู่และบล็อกการอัปเกรดฐานข้อมูล\n` +
@@ -101,20 +104,16 @@ export function getDb(): Promise<IDBPDatabase<OlxBuilderDB>> {
         }
       },
       blocking() {
-        // This tab is now blocking another tab's upgrade. Close our connection.
+        console.warn("[db] BLOCKING — this tab is preventing another tab's upgrade; closing & reloading");
         getDb().then((db) => db.close()).catch(() => {});
         dbPromise = null;
-        if (typeof window !== "undefined") {
-          window.location.reload();
-        }
+        if (typeof window !== "undefined") window.location.reload();
       },
       terminated() {
+        console.warn("[db] connection terminated unexpectedly");
         dbPromise = null;
-        if (typeof window !== "undefined") {
-          console.warn("[db] connection terminated unexpectedly");
-        }
       },
-    }), 5000, "ปิดแท็บอื่นของแอปนี้แล้วลองใหม่ หรือเปิด DevTools แล้วรัน __resetDb()");
+    }), 5000, "ปิดแท็บอื่นของแอปนี้แล้วลองใหม่ หรือกดปุ่ม รีเซ็ตฐานข้อมูล");
     // Reset dbPromise on failure so the next call can retry
     dbPromise.catch(() => { dbPromise = null; });
   }
