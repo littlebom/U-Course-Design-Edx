@@ -36,11 +36,24 @@ export function validateCourse(course: Course, assetNames: Set<string>): Validat
               issues.push({ level: "error", message: `${where}: Poll ต้องมีตัวเลือกอย่างน้อย 2 ข้อ` });
           } else if (b.type === "problem") {
             const pb = b;
-            const correct = pb.choices.filter((c) => c.correct).length;
-            if (correct === 0)
-              issues.push({ level: "error", message: `${where}: ไม่มี choice ที่ถูก` });
-            if (pb.problemType === "multiplechoice" && correct > 1)
-              issues.push({ level: "error", message: `${where}: MCQ ต้องมีคำตอบถูกข้อเดียว` });
+            const kind = pb.problemType;
+            if (kind === "multiplechoice" || kind === "checkbox" || kind === "dropdown") {
+              const choices = pb.choices ?? [];
+              if (choices.length < 2)
+                issues.push({ level: "error", message: `${where}: ต้องมีตัวเลือกอย่างน้อย 2 ข้อ` });
+              const correct = choices.filter((c) => c.correct).length;
+              if (correct === 0)
+                issues.push({ level: "error", message: `${where}: ไม่มี choice ที่ถูก` });
+              if ((kind === "multiplechoice" || kind === "dropdown") && correct > 1)
+                issues.push({ level: "error", message: `${where}: ${kind} ต้องมีคำตอบถูกข้อเดียว` });
+            } else if (kind === "numerical") {
+              if (pb.numericalAnswer == null || Number.isNaN(pb.numericalAnswer))
+                issues.push({ level: "error", message: `${where}: Numerical ต้องระบุคำตอบเป็นตัวเลข` });
+            } else if (kind === "text") {
+              const answers = (pb.textAnswers ?? []).filter((a) => a.trim().length > 0);
+              if (answers.length === 0)
+                issues.push({ level: "error", message: `${where}: Text ต้องมีคำตอบที่ถูกอย่างน้อย 1 รายการ` });
+            }
           }
         });
       });

@@ -5,12 +5,30 @@ export const choiceSchema = z.object({
   correct: z.boolean(),
 });
 
+// Five Open edX "common problem" types — choice-based (3) + answer-based (2).
+//   - multiplechoice → <multiplechoiceresponse> + <choicegroup>     (single select)
+//   - checkbox       → <choiceresponse> + <checkboxgroup>            (multi-select)
+//   - dropdown       → <optionresponse> + <optioninput><option>      (dropdown)
+//   - numerical      → <numericalresponse> + tolerance               (number input)
+//   - text           → <stringresponse> + optional regex/ci          (text input)
+export const textMatchModeSchema = z.enum(["exact", "ci", "regex", "ci-regex"]);
+export type TextMatchMode = z.infer<typeof textMatchModeSchema>;
+
 export const problemBlockSchema = z.object({
   type: z.literal("problem"),
   displayName: z.string().min(1),
-  problemType: z.enum(["multiplechoice", "checkbox"]),
+  problemType: z.enum(["multiplechoice", "checkbox", "dropdown", "numerical", "text"]),
   question: z.string().min(1),
-  choices: z.array(choiceSchema).min(2),
+  // Choice-based fields (used by multiplechoice / checkbox / dropdown)
+  choices: z.array(choiceSchema).optional(),
+  // Numerical-input fields
+  numericalAnswer: z.number().optional(),
+  // Tolerance string allows "0.01" or "2%" — Studio's native format
+  numericalTolerance: z.string().optional(),
+  // Text-input fields
+  textAnswers: z.array(z.string()).optional(),
+  textMatchMode: textMatchModeSchema.optional(),
+  // Common across all types
   maxAttempts: z.number().int().positive().optional(),
   showAnswer: z
     .enum(["always", "answered", "attempted", "closed", "finished", "past_due", "correct_or_past_due", "never"])

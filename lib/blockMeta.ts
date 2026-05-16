@@ -64,11 +64,17 @@ export function getBlockMeta(block: Block): BlockMeta {
                             title = `Unknown Block (${(block as UnknownBlock).blockType})`;
                             break;
     case "library_content": badgeLabel = `สุ่ม ${(block as LibraryContentBlock).maxCount} ข้อ`; break;
-    case "problem":
-      badgeLabel = (block as ProblemBlock).problemType === "multiplechoice"
-        ? "เลือก 1 ข้อ"
-        : "เลือกหลายข้อ";
+    case "problem": {
+      const kind = (block as ProblemBlock).problemType;
+      badgeLabel =
+        kind === "multiplechoice" ? "เลือก 1 ข้อ" :
+        kind === "checkbox" ? "เลือกหลายข้อ" :
+        kind === "dropdown" ? "Dropdown" :
+        kind === "numerical" ? "ตัวเลข" :
+        kind === "text" ? "ข้อความ" :
+        "Problem";
       break;
+    }
   }
 
   return { ...meta, title, badgeLabel };
