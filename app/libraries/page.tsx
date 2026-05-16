@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Library as LibIcon, Copy, Download, Plus, Trash2, Upload, RotateCcw, FileJson } from "lucide-react";
+import { Library as LibIcon, Copy, Download, Plus, Trash2, Upload, RotateCcw, FileJson, ArrowUpFromLine } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import type { LibraryRecord } from "@/lib/db/libraries";
 import {
   listLibraries, createLibrary, softDeleteLibrary, restoreLibrary, hardDeleteLibrary, emptyLibrary,
 } from "@/lib/db/libraries";
 import { parseLibraryZip } from "@/lib/library/import";
+import { parseLibraryV1Tar } from "@/lib/library/import-v1";
 import { downloadLibraryZip } from "@/lib/library/export";
 import { putLibraryAsset, loadLibraryAssetsAsMap } from "@/lib/db/library-assets";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,22 @@ export default function LibrariesPage() {
     }
   };
 
+  const handleImportV1Tar = async (file: File) => {
+    try {
+      const buf = await file.arrayBuffer();
+      // Default to flat structure; user can wrap manually later via Add Section
+      const { library, warnings, assets, stats } = await parseLibraryV1Tar(buf, { wrapMode: "flat" });
+      const rec = await createLibrary(library);
+      for (const [key, f] of assets) await putLibraryAsset(rec.id, key, f);
+      const msg = `✅ Upgraded ${stats.blockCount} block จาก Library v1 → v2${stats.skippedCount > 0 ? ` (ข้าม ${stats.skippedCount})` : ""}`;
+      if (warnings.length) console.warn("Library v1 import warnings:", warnings);
+      alert(msg);
+      router.push(`/library/${rec.id}`);
+    } catch (e) {
+      alert(`Import v1 ล้มเหลว: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+
   const handleExport = async (rec: LibraryRecord) => {
     const assets = await loadLibraryAssetsAsMap(rec.id);
     await downloadLibraryZip(rec.library, assets);
@@ -74,7 +91,16 @@ export default function LibrariesPage() {
         }
         right={
           <>
-            <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-default px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4" title="Import library .zip จาก Open edX">
+            <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-default px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4" title="Import Library v1 .tar.gz แล้วอัปเกรดเป็น v2 อัตโนมัติ">
+              <ArrowUpFromLine size={14} /> Upgrade v1 → v2
+              <input
+                type="file"
+                accept=".tar.gz,.tgz,application/gzip,application/x-gzip"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && handleImportV1Tar(e.target.files[0])}
+              />
+            </label>
+            <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-default px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4" title="Import Library v2 .zip จาก Open edX Ulmo">
               <Upload size={14} /> Import .zip
               <input
                 type="file"
