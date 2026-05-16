@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Library as LibIcon, Download, Plus, Trash2, FolderTree, Info, ChevronDown, FileText, HelpCircle, ArrowUp, ArrowDown, FolderOpen, ImageIcon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { SaveIndicator } from "@/components/SaveIndicator";
+import { useAssetSync } from "@/lib/hooks/useAssetSync";
+import { useDebouncedAutosave } from "@/lib/hooks/useDebouncedAutosave";
 import { LibraryInfoDialog } from "@/components/LibraryInfoDialog";
 import { BlockEditor } from "@/components/BlockEditor";
 import {
@@ -35,57 +37,50 @@ import { downloadLibraryZip } from "@/lib/library/export";
 import { cn } from "@/lib/utils";
 import { getBlockVisuals } from "@/lib/blockMeta";
 
-type SaveStatus = "idle" | "saving" | "saved" | "error";
-
 export default function LibraryEditorPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const libraryId = params?.id;
 
   const [library, setLibrary] = useState<Library | null>(null);
-  const [assets, setAssets] = useState<Map<string, File>>(new Map());
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [leftTab, setLeftTab] = useState<"entities" | "collections" | "assets">("entities");
 
-  // Bridge: AssetUploader speaks Map<string, AssetFile>; library DB speaks Map<string, File>.
-  // We expose all stored assets (keys include "shared/<file>" or "<uuid>/<file>") and persist
-  // adds/removes via putLibraryAsset/deleteLibraryAsset.
+  // Race-safe asset CRUD via shared hook.
+  // Library DB stores Map<string, File> with keys like "shared/<name>" or "<uuid>/<name>".
+  // AssetUploader speaks Map<string, AssetFile>; the hook lets us store File directly and
+  // adapt at the boundary.
+  const assetSync = useAssetSync<File>({
+    onPut: async (key, file) => { if (libraryId) await putLibraryAsset(libraryId, key, file); },
+    onDelete: async (key) => { if (libraryId) await deleteLibraryAsset(libraryId, key); },
+    onError: (e) => setErr(e instanceof Error ? e.message : String(e)),
+  });
+  const assets = assetSync.assets;
+
+  // Adapter: AssetUploader gives us AssetFile, but new uploads should be routed
+  // under "shared/<filename>" so they don't collide with per-xblock keys.
   const handleAssetMapChange = useCallback(
     async (next: Map<string, AssetFile>) => {
-      if (!libraryId) return;
-      const prev = assets;
-      const nextNames = new Set(next.keys());
       const fileMap = new Map<string, File>();
-
       for (const [k, af] of next) {
-        const old = prev.get(k);
-        if (!old || old.size !== af.size) {
-          // New upload — strip any directory prefix the user pasted, then route to "shared/"
-          const cleanName = k.replace(/.*\//, "");
-          const targetKey = k.includes("/") ? k : `shared/${cleanName}`;
-          const file = af.blob instanceof File ? af.blob : new File([af.blob], cleanName);
-          await putLibraryAsset(libraryId, targetKey, file);
-          fileMap.set(targetKey, file);
-        } else {
-          fileMap.set(k, old);
-        }
+        const cleanName = k.replace(/.*\//, "");
+        const targetKey = k.includes("/") ? k : `shared/${cleanName}`;
+        const file = af.blob instanceof File ? af.blob : new File([af.blob], cleanName);
+        fileMap.set(targetKey, file);
       }
-      for (const k of prev.keys()) {
-        if (!nextNames.has(k)) await deleteLibraryAsset(libraryId, k);
-      }
-      setAssets(fileMap);
+      await assetSync.apply(fileMap);
     },
-    [libraryId, assets],
+    [assetSync],
   );
 
-  // Adapter view of assets for AssetUploader
-  const assetFileView = new Map<string, AssetFile>(
-    Array.from(assets.entries()).map(([k, f]) => [k, { name: k, size: f.size, blob: f }]),
+  const assetFileView = useMemo(
+    () => new Map<string, AssetFile>(
+      Array.from(assets.entries()).map(([k, f]) => [k, { name: k, size: f.size, blob: f }]),
+    ),
+    [assets],
   );
 
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -98,31 +93,22 @@ export default function LibraryEditorPage() {
         if (!rec) { router.replace("/libraries"); return; }
         if (cancelled) return;
         setLibrary(rec.library);
-        setAssets(await loadLibraryAssetsAsMap(libraryId));
+        assetSync.hydrate(await loadLibraryAssetsAsMap(libraryId));
         setHydrated(true);
       } catch (e) {
         setErr(e instanceof Error ? e.message : String(e));
       }
     })();
     return () => { cancelled = true; };
-  }, [libraryId, router]);
+  }, [libraryId, router, assetSync]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  useEffect(() => {
-    if (!hydrated || !library || !libraryId) return;
-    const t = setTimeout(async () => {
-      setSaveStatus("saving");
-      try {
-        await saveLibrary(libraryId, library);
-        setSaveStatus("saved");
-        setSavedAt(Date.now());
-      } catch (e) {
-        setSaveStatus("error");
-        setErr(e instanceof Error ? e.message : String(e));
-      }
-    }, 600);
-    return () => clearTimeout(t);
-  }, [library, hydrated, libraryId]);
+  const { status: saveStatus, savedAt } = useDebouncedAutosave(
+    library,
+    hydrated && !!library && !!libraryId,
+    600,
+    async (v) => { if (libraryId && v) await saveLibrary(libraryId, v); },
+  );
 
   const update = useCallback((fn: (lib: Library) => void) => {
     setLibrary((prev) => {

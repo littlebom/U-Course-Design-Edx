@@ -31,6 +31,9 @@ import { CourseInfoDialog } from "@/components/CourseInfoDialog";
 import { SequentialEditor } from "@/components/SequentialEditor";
 import { CourseSwitcher } from "@/components/CourseSwitcher";
 import { SaveIndicator } from "@/components/SaveIndicator";
+import { useAssetSync } from "@/lib/hooks/useAssetSync";
+import { useDebouncedAutosave } from "@/lib/hooks/useDebouncedAutosave";
+import { useSidebarPref } from "@/lib/hooks/useSidebarPref";
 import { Navbar } from "@/components/Navbar";
 import { downloadCourseJson } from "@/lib/persist";
 import { getCourse, saveCourse } from "@/lib/db/courses";
@@ -51,7 +54,6 @@ import { cn } from "@/lib/utils";
 
 type Sel = { ci: number; si: number; vi: number; bi: number } | null;
 type SeqSel = { ci: number; si: number } | null;
-type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export default function Page() {
   return (
@@ -67,34 +69,37 @@ function PageInner() {
   const courseId = searchParams.get("courseId");
 
   const [course, setCourse] = useState<Course>(sampleCourse);
-  const [assets, setAssets] = useState<Map<string, AssetFile>>(new Map());
   const [sel, setSel] = useState<Sel>({ ci: 0, si: 0, vi: 0, bi: 0 });
   const [seqSel, setSeqSel] = useState<SeqSel>(null);
   const [bulkTarget, setBulkTarget] = useState<{ ci: number; si: number; vi: number } | null>(null);
   const [topErr, setTopErr] = useState<string | null>(null);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [infoOpen, setInfoOpen] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [linkedFile, setLinkedFile] = useState<{ handle: FileSystemFileHandle; name: string } | null>(null);
   const [linkedSavedAt, setLinkedSavedAt] = useState<number | null>(null);
   const [fsaSupported, setFsaSupported] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useSidebarPref();
   const xmlRef = useRef<JsonDropzoneHandle>(null);
   const olxRef = useRef<OlxDropzoneHandle>(null);
 
   /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    setFsaSupported(supportsFileSystemAccess());
-    const v = localStorage.getItem("olx-builder:sidebar");
-    if (v === "0") setSidebarOpen(false);
-  }, []);
+  useEffect(() => { setFsaSupported(supportsFileSystemAccess()); }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  useEffect(() => {
-    if (hydrated) localStorage.setItem("olx-builder:sidebar", sidebarOpen ? "1" : "0");
-  }, [sidebarOpen, hydrated]);
+  // ── Asset CRUD (race-safe via shared hook) ────────────────────────────
+  const assetSync = useAssetSync<AssetFile>({
+    compare: (a, b) => a.blob === b.blob,
+    onPut: async (name, af) => {
+      if (!courseId) return;
+      const file = af.blob instanceof File ? af.blob : new File([af.blob], name);
+      await putAsset(courseId, file, name);
+    },
+    onDelete: async (name) => { if (courseId) await deleteAsset(courseId, name); },
+    onError: (e) => setTopErr(e instanceof Error ? e.message : String(e)),
+  });
+  const assets = assetSync.assets;
+  const handleAssetsChange = assetSync.apply;
 
   // ── Load course + assets from DB on mount / courseId change ────────────
   useEffect(() => {
@@ -116,8 +121,7 @@ function PageInner() {
         const assetMap = new Map<string, AssetFile>();
         for (const [name, file] of map)
           assetMap.set(name, { name, size: file.size, blob: file });
-        setAssets(assetMap);
-        latestAssetsRef.current = assetMap;
+        assetSync.hydrate(assetMap);
         await setMeta("currentCourseId", courseId);
 
         // Accept structure from markdown import page (session-passed)
@@ -135,61 +139,18 @@ function PageInner() {
       }
     })();
     return () => { cancelled = true; };
-  }, [courseId, router]);
+  }, [courseId, router, assetSync]);
 
   // ── Debounced save course → DB ─────────────────────────────────────────
-  useEffect(() => {
-    if (!hydrated || !courseId) return;
-    const t = setTimeout(async () => {
-      setSaveStatus("saving");
-      try {
-        await saveCourse(courseId, course);
-        setSaveStatus("saved");
-        setSavedAt(Date.now());
-      } catch (e) {
-        setSaveStatus("error");
-        setTopErr(e instanceof Error ? e.message : String(e));
-      }
-    }, 600);
-    return () => clearTimeout(t);
-  }, [course, hydrated, courseId]);
-
-  // ── Asset CRUD: wrap setAssets to sync DB writes ───────────────────────
-  // Race-safe: latestAssetsRef tracks what we've actually written to DB so the
-  // diff doesn't rely on the React state closure (which can be stale during
-  // rapid add/delete). Operations are serialized via a chained promise so two
-  // close-together calls can't interleave puts and deletes for the same key.
-  const latestAssetsRef = useRef<Map<string, AssetFile>>(new Map());
-  const assetSyncChainRef = useRef<Promise<void>>(Promise.resolve());
-
-  const handleAssetsChange = useCallback((next: Map<string, AssetFile>): Promise<void> => {
-    setAssets(next);
-    if (!courseId) {
-      /* eslint-disable-next-line react-hooks/immutability */
-      latestAssetsRef.current = next;
-      return Promise.resolve();
-    }
-    const run = async () => {
-      const prev = latestAssetsRef.current;
-      /* eslint-disable-next-line react-hooks/immutability */
-      latestAssetsRef.current = next;
-      // Added or changed → write
-      for (const [name, af] of next) {
-        const old = prev.get(name);
-        if (!old || old.blob !== af.blob) {
-          const file = af.blob instanceof File ? af.blob : new File([af.blob], name);
-          await putAsset(courseId, file, name);
-        }
-      }
-      // Removed → delete
-      for (const name of prev.keys()) {
-        if (!next.has(name)) await deleteAsset(courseId, name);
-      }
-    };
-    const chained = assetSyncChainRef.current.then(run, run);
-    assetSyncChainRef.current = chained.catch(() => {});
-    return chained;
-  }, [courseId]);
+  const { status: saveStatus, savedAt } = useDebouncedAutosave(
+    course,
+    hydrated && !!courseId,
+    600,
+    async (v) => {
+      if (!courseId) return;
+      await saveCourse(courseId, v);
+    },
+  );
 
   const handleSave = async () => {
     setTopErr(null);
@@ -324,7 +285,7 @@ function PageInner() {
 
             <button
               type="button"
-              onClick={() => setSidebarOpen((v) => !v)}
+              onClick={() => setSidebarOpen(!sidebarOpen)}
               title={sidebarOpen ? "ซ่อน sidebar" : "แสดง sidebar"}
               aria-label={sidebarOpen ? "ซ่อน sidebar" : "แสดง sidebar"}
               className="ml-1 grid h-7 w-7 place-items-center rounded-md bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
