@@ -6,15 +6,13 @@ import {
   Plus,
   Info,
   Save,
-  RotateCcw,
   CheckCircle2,
-  Download,
   FileCode2,
   PackageOpen,
   Link2,
   PanelRightOpen,
   PanelRightClose,
-  Settings,
+  Replace,
   ChevronDown,
 } from "lucide-react";
 import type { Course, ProblemBlock } from "@/lib/schema";
@@ -45,7 +43,7 @@ import {
 } from "@/lib/fileHandle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -69,7 +67,6 @@ function PageInner() {
 
   const [course, setCourse] = useState<Course>(sampleCourse);
   const [assets, setAssets] = useState<Map<string, AssetFile>>(new Map());
-  const [confirmReset, setConfirmReset] = useState(false);
   const [sel, setSel] = useState<Sel>({ ci: 0, si: 0, vi: 0, bi: 0 });
   const [seqSel, setSeqSel] = useState<SeqSel>(null);
   const [bulkTarget, setBulkTarget] = useState<{ ci: number; si: number; vi: number } | null>(null);
@@ -174,22 +171,6 @@ function PageInner() {
     }
   }, [assets, courseId]);
 
-  const doReset = () => {
-    router.push("/courses");
-    setConfirmReset(false);
-  };
-
-  const handleDownloadTemplates = () => {
-    const files = ["/template.xml", "/problems-learning-design.xml"];
-    for (const path of files) {
-      const a = document.createElement("a");
-      a.href = path;
-      a.download = path.slice(1);
-      a.click();
-    }
-  };
-
-
   const handleSave = async () => {
     setTopErr(null);
     try {
@@ -263,7 +244,6 @@ function PageInner() {
   return (
     <div className="flex h-screen flex-col bg-default-50">
       <Navbar
-        showBackToCourses
         brand={
           <div className="flex max-w-xs items-center gap-2 truncate text-sm font-medium text-default-700">
             <span className="truncate">{course.course.displayName}</span>
@@ -295,53 +275,28 @@ function PageInner() {
         }
         right={
           <>
-            <Button variant="ghost" size="sm" onClick={() => setConfirmReset(true)} className="text-default-500 hover:text-destructive" title="Reset">
-              <RotateCcw size={14} />
-            </Button>
-
-            <Separator orientation="vertical" className="h-6" />
-
             <Button variant="outline" size="sm" onClick={() => setInfoOpen(true)}>
               <Info size={14} className="me-1.5" /> Course Info
             </Button>
 
+            <Button variant="outline" size="sm" onClick={handleSave} title="ดาวน์โหลด course JSON (ข้อมูลถูก auto-save ใน DB แล้ว)">
+              <Save size={14} className="me-1.5" />
+              {linkedFile ? "Save" : "Download JSON"}
+            </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Settings size={14} className="me-1.5" /> File
+                <Button variant="outline" size="sm" title="ทับเนื้อหาคอร์สนี้ด้วยข้อมูลจากไฟล์">
+                  <Replace size={14} className="me-1.5" /> Replace
                   <ChevronDown size={12} className="ml-1 opacity-60" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-default-400">
-                  Import
-                </DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => xmlRef.current?.open()}>
-                  <FileCode2 size={13} className="me-2 text-default-500" /> Import XML
+                  <FileCode2 size={13} className="me-2 text-default-500" /> Replace with XML
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => olxRef.current?.open()}>
-                  <PackageOpen size={13} className="me-2 text-default-500" /> Import OLX (.tar.gz)
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-default-400">
-                  Template
-                </DropdownMenuLabel>
-                {fsaSupported && (
-                  <DropdownMenuItem onClick={handleDownloadTemplates}>
-                    <Download size={13} className="me-2 text-default-500" /> XML Template
-                  </DropdownMenuItem>
-                )}
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-default-400">
-                  Save & Export
-                </DropdownMenuLabel>
-                <DropdownMenuItem onClick={handleSave}>
-                  <Save size={13} className="me-2 text-default-500" />
-                  {linkedFile ? "Save" : fsaSupported ? "Save As..." : "Save JSON"}
+                  <PackageOpen size={13} className="me-2 text-default-500" /> Replace with OLX (.tar.gz)
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -349,12 +304,6 @@ function PageInner() {
             <Separator orientation="vertical" className="h-6" />
 
             <ExportButton course={course} assets={assets} disabled={hasErrors} />
-
-            {!sidebarOpen && (
-              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} title="แสดง sidebar" className="!h-9 !w-9">
-                <PanelRightOpen size={16} />
-              </Button>
-            )}
           </>
         }
       />
@@ -401,10 +350,19 @@ function PageInner() {
 
       <main
         className={cn(
-          "grid flex-1 gap-4 overflow-hidden p-4 transition-[grid-template-columns] duration-200",
+          "relative grid flex-1 gap-4 overflow-hidden p-4 transition-[grid-template-columns] duration-200",
           sidebarOpen ? "grid-cols-12" : "grid-cols-9",
         )}
       >
+        {/* Sidebar toggle — floating on right edge of main area */}
+        <button
+          type="button"
+          onClick={() => setSidebarOpen((v) => !v)}
+          title={sidebarOpen ? "ซ่อน sidebar" : "แสดง sidebar"}
+          className="absolute right-0 top-1/2 z-10 grid -translate-y-1/2 place-items-center rounded-l-md border border-r-0 bg-card px-1 py-3 text-default-400 shadow-base transition-colors hover:bg-default hover:text-default-foreground"
+        >
+          {sidebarOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
+        </button>
         <Card
           className={cn(
             "flex min-h-0 flex-col overflow-hidden",
@@ -422,7 +380,7 @@ function PageInner() {
               onChange={setCourse}
               onSelectBlock={(p) => { setSel(p); setSeqSel(null); }}
               onSelectSequential={(p) => { setSeqSel(p); setSel(null); }}
-              onMarkdownImport={() => router.push("/markdown")}
+              onMarkdownImport={() => router.push(courseId ? `/markdown?courseId=${courseId}` : "/markdown")}
             />
           </CardContent>
         </Card>
@@ -465,19 +423,10 @@ function PageInner() {
         {sidebarOpen && (
           <aside className="col-span-3 flex min-h-0 flex-col gap-4">
             <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              <CardHeader className="flex shrink-0 flex-row items-center justify-between border-b py-3">
+              <CardHeader className="shrink-0 border-b py-3">
                 <CardTitle className="text-sm font-semibold uppercase tracking-wider text-default-500">
                   รูปภาพ / ไฟล์
                 </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="!h-7 !w-7 text-default-400 hover:text-default-700"
-                  onClick={() => setSidebarOpen(false)}
-                  title="ซ่อน sidebar"
-                >
-                  <PanelRightClose size={14} />
-                </Button>
               </CardHeader>
               <CardContent className="min-h-0 flex-1 overflow-auto p-3">
                 <AssetUploader assets={assets} onChange={handleAssetsChange} />
@@ -498,21 +447,6 @@ function PageInner() {
       </main>
 
       {bulkTarget && <BulkProblemImport onImport={insertBulk} onClose={() => setBulkTarget(null)} />}
-
-      <Dialog open={confirmReset} onOpenChange={(o) => !o && setConfirmReset(false)}>
-        <DialogContent size="sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <RotateCcw size={15} /> ยืนยันการ Reset
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-default-600">ล้างข้อมูลทั้งหมดและโหลด course ตัวอย่างใหม่ใช่หรือไม่?</p>
-          <DialogFooter>
-            <Button variant="ghost" size="sm" onClick={() => setConfirmReset(false)}>ยกเลิก</Button>
-            <Button color="destructive" size="sm" onClick={doReset}>Reset</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <CourseInfoDialog
         open={infoOpen}

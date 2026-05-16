@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Copy, Download, Plus, Trash2, Upload, RotateCcw, FileJson, HardDrive, Archive, ArchiveRestore } from "lucide-react";
+import { BookOpen, Copy, Download, Plus, Trash2, Upload, RotateCcw, FileJson, HardDrive, Archive, ArchiveRestore, FileCode2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import type { CourseRecord } from "@/lib/db/types";
 import {
@@ -56,6 +56,25 @@ export default function CoursesPage() {
     router.push(`/?courseId=${rec.id}`);
   };
 
+  const handleDownloadTemplates = () => {
+    for (const path of ["/template.xml", "/problems-learning-design.xml"]) {
+      const a = document.createElement("a");
+      a.href = path;
+      a.download = path.slice(1);
+      a.click();
+    }
+  };
+
+  const handleRestoreBackup = async (file: File) => {
+    try {
+      const res = await importBackup(file);
+      alert(`นำเข้าสำเร็จ ${res.imported} คอร์ส${res.skipped ? ` · ข้าม ${res.skipped}` : ""}`);
+      refresh();
+    } catch (err) {
+      alert(`Restore ล้มเหลว: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
   const handleImportJson = async (file: File) => {
     try {
       const text = await file.text();
@@ -87,30 +106,7 @@ export default function CoursesPage() {
         }
         right={
           <>
-            <Button variant="ghost" size="sm" onClick={() => downloadBackup()} title="สำรองข้อมูลทุกคอร์ส">
-              <Archive size={14} className="me-1.5" /> Backup
-            </Button>
-            <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4" title="กู้คืนจากไฟล์ backup">
-              <ArchiveRestore size={14} /> Restore
-              <input
-                type="file"
-                accept="application/json"
-                className="hidden"
-                onChange={async (e) => {
-                  const f = e.target.files?.[0];
-                  if (!f) return;
-                  try {
-                    const res = await importBackup(f);
-                    alert(`นำเข้าสำเร็จ ${res.imported} คอร์ส${res.skipped ? ` · ข้าม ${res.skipped}` : ""}`);
-                    refresh();
-                  } catch (err) {
-                    alert(`Restore ล้มเหลว: ${err instanceof Error ? err.message : String(err)}`);
-                  }
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-default px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4">
+            <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-default px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4" title="Import course จาก JSON ไฟล์">
               <Upload size={14} /> Import JSON
               <input
                 type="file"
@@ -119,6 +115,9 @@ export default function CoursesPage() {
                 onChange={(e) => e.target.files?.[0] && handleImportJson(e.target.files[0])}
               />
             </label>
+            <Button onClick={handleDownloadTemplates} variant="outline" size="sm" title="ดาวน์โหลด XML template สำหรับสร้างคอร์สแบบ structured">
+              <FileCode2 size={14} className="me-1.5" /> XML Template
+            </Button>
             <Button onClick={() => handleCreate("blank")} variant="outline" size="sm">
               <FileJson size={14} className="me-1.5" /> สร้างคอร์สเปล่า
             </Button>
@@ -135,7 +134,12 @@ export default function CoursesPage() {
         )}
 
         {storage && storage.quota > 0 && (
-          <StorageBar usage={storage.usage} quota={storage.quota} />
+          <StorageBar
+            usage={storage.usage}
+            quota={storage.quota}
+            onBackup={() => downloadBackup()}
+            onRestore={handleRestoreBackup}
+          />
         )}
 
         <div className="mb-4 flex items-center gap-2 text-sm">
@@ -164,7 +168,11 @@ export default function CoursesPage() {
         {loading ? (
           <div className="grid place-items-center py-24 text-default-400">กำลังโหลด…</div>
         ) : visible.length === 0 ? (
-          <EmptyState onCreate={() => handleCreate("sample")} inTrash={showTrash} />
+          <EmptyState
+            onCreate={() => handleCreate("sample")}
+            onDownloadTemplate={handleDownloadTemplates}
+            inTrash={showTrash}
+          />
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {visible.map((c) => (
@@ -275,7 +283,14 @@ function CourseCard({
   );
 }
 
-function StorageBar({ usage, quota }: { usage: number; quota: number }) {
+function StorageBar({
+  usage, quota, onBackup, onRestore,
+}: {
+  usage: number;
+  quota: number;
+  onBackup: () => void;
+  onRestore: (file: File) => void;
+}) {
   const pct = quota === 0 ? 0 : Math.min(100, (usage / quota) * 100);
   const usedMb = (usage / 1024 / 1024).toFixed(1);
   const quotaMb = (quota / 1024 / 1024).toFixed(0);
@@ -297,11 +312,35 @@ function StorageBar({ usage, quota }: { usage: number; quota: number }) {
           />
         </div>
       </div>
+      <div className="flex shrink-0 items-center gap-1">
+        <Button variant="ghost" size="sm" onClick={onBackup} title="สำรองข้อมูลทุกคอร์ส + assets เป็น JSON ไฟล์เดียว">
+          <Archive size={12} className="me-1" /> Backup
+        </Button>
+        <label className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-md px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4" title="กู้คืนจากไฟล์ backup (สร้างคอร์สใหม่ ไม่ทับของเดิม)">
+          <ArchiveRestore size={12} /> Restore
+          <input
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onRestore(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+      </div>
     </div>
   );
 }
 
-function EmptyState({ onCreate, inTrash }: { onCreate: () => void; inTrash: boolean }) {
+function EmptyState({
+  onCreate, onDownloadTemplate, inTrash,
+}: {
+  onCreate: () => void;
+  onDownloadTemplate: () => void;
+  inTrash: boolean;
+}) {
   return (
     <div className="grid place-items-center rounded-lg border border-dashed py-24 text-center">
       <BookOpen size={36} className="mb-3 text-default-300" />
@@ -312,9 +351,18 @@ function EmptyState({ onCreate, inTrash }: { onCreate: () => void; inTrash: bool
         {inTrash ? "คอร์สที่ลบจะอยู่ที่นี่ 7 วันก่อนลบถาวร" : "เริ่มต้นโดยสร้างรายวิชาใหม่"}
       </p>
       {!inTrash && (
-        <Button size="sm" onClick={onCreate}>
-          <Plus size={14} className="me-1" /> สร้างรายวิชา
-        </Button>
+        <>
+          <Button size="sm" onClick={onCreate}>
+            <Plus size={14} className="me-1" /> สร้างรายวิชา
+          </Button>
+          <button
+            type="button"
+            onClick={onDownloadTemplate}
+            className="mt-3 inline-flex items-center gap-1 text-xs text-default-400 underline-offset-2 hover:text-primary hover:underline"
+          >
+            <FileCode2 size={11} /> หรือดาวน์โหลด XML Template เพื่อสร้างคอร์สแบบ structured
+          </button>
+        </>
       )}
     </div>
   );

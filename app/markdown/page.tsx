@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   FileText,
@@ -154,7 +154,18 @@ const EXAMPLE = `# บทที่ 1: Introduction
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MarkdownImportPage() {
+  return (
+    <Suspense fallback={<div className="grid h-screen place-items-center text-default-400">กำลังโหลด…</div>}>
+      <Inner />
+    </Suspense>
+  );
+}
+
+function Inner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const courseId = searchParams.get("courseId");
+  const editorHref = courseId ? `/?courseId=${courseId}` : "/courses";
   const [md, setMd] = useState("");
 
   const { chapters, warnings } = useMemo(() => {
@@ -172,7 +183,7 @@ export default function MarkdownImportPage() {
   const handleImport = () => {
     if (chapters.length === 0) return;
     sessionStorage.setItem("olx-builder:md-import", JSON.stringify(chapters));
-    router.push("/");
+    router.push(editorHref);
   };
 
   return (
@@ -189,7 +200,7 @@ export default function MarkdownImportPage() {
         }
         right={
           <>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
+            <Button variant="ghost" size="sm" onClick={() => router.push(editorHref)}>
               <ArrowLeft size={14} className="me-1.5" /> กลับไปยัง Editor
             </Button>
             <Button
@@ -198,7 +209,7 @@ export default function MarkdownImportPage() {
               disabled={chapters.length === 0}
               onClick={handleImport}
             >
-              Import{" "}
+              เพิ่มเข้าคอร์ส{" "}
               {totalUnits > 0
                 ? `(${totalSections} Section · ${totalSubSections} SubSection · ${totalUnits} Unit)`
                 : ""}
