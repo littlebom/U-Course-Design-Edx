@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Library as LibIcon, Download, Plus, Trash2, FolderTree, Info, ChevronDown, FileText, HelpCircle } from "lucide-react";
+import { Library as LibIcon, Download, Plus, Trash2, FolderTree, Info, ChevronDown, FileText, HelpCircle, ArrowUp, ArrowDown, FolderOpen, ImageIcon } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CollectionEditor } from "@/components/CollectionEditor";
+import { AssetUploader, type AssetFile } from "@/components/AssetUploader";
+import { deleteLibraryAsset, putLibraryAsset } from "@/lib/db/library-assets";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,6 +50,43 @@ export default function LibraryEditorPage() {
   const [err, setErr] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [leftTab, setLeftTab] = useState<"entities" | "collections" | "assets">("entities");
+
+  // Bridge: AssetUploader speaks Map<string, AssetFile>; library DB speaks Map<string, File>.
+  // We expose all stored assets (keys include "shared/<file>" or "<uuid>/<file>") and persist
+  // adds/removes via putLibraryAsset/deleteLibraryAsset.
+  const handleAssetMapChange = useCallback(
+    async (next: Map<string, AssetFile>) => {
+      if (!libraryId) return;
+      const prev = assets;
+      const nextNames = new Set(next.keys());
+      const fileMap = new Map<string, File>();
+
+      for (const [k, af] of next) {
+        const old = prev.get(k);
+        if (!old || old.size !== af.size) {
+          // New upload — strip any directory prefix the user pasted, then route to "shared/"
+          const cleanName = k.replace(/.*\//, "");
+          const targetKey = k.includes("/") ? k : `shared/${cleanName}`;
+          const file = af.blob instanceof File ? af.blob : new File([af.blob], cleanName);
+          await putLibraryAsset(libraryId, targetKey, file);
+          fileMap.set(targetKey, file);
+        } else {
+          fileMap.set(k, old);
+        }
+      }
+      for (const k of prev.keys()) {
+        if (!nextNames.has(k)) await deleteLibraryAsset(libraryId, k);
+      }
+      setAssets(fileMap);
+    },
+    [libraryId, assets],
+  );
+
+  // Adapter view of assets for AssetUploader
+  const assetFileView = new Map<string, AssetFile>(
+    Array.from(assets.entries()).map(([k, f]) => [k, { name: k, size: f.size, blob: f }]),
+  );
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -142,11 +183,21 @@ export default function LibraryEditorPage() {
 
       <main className="grid flex-1 grid-cols-12 gap-4 overflow-hidden p-4">
         <Card className="col-span-4 flex min-h-0 flex-col overflow-hidden">
-          <CardHeader className="flex shrink-0 flex-row items-center justify-between border-b py-3">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-default-500">
-              <FolderTree size={13} className="me-1 inline" /> Entities
-            </CardTitle>
-            <AddEntityMenu onAdd={(k) => {
+          <CardHeader className="flex shrink-0 flex-row items-center justify-between gap-2 border-b py-3">
+            <Tabs value={leftTab} onValueChange={(v) => setLeftTab(v as "entities" | "collections")}>
+              <TabsList className="bg-default-100 !gap-0.5 !p-0.5">
+                <TabsTrigger value="entities" className="!h-6 !px-2 !text-xs">
+                  <FolderTree size={11} className="me-1" /> Entities ({library.entities.length})
+                </TabsTrigger>
+                <TabsTrigger value="collections" className="!h-6 !px-2 !text-xs">
+                  <FolderOpen size={11} className="me-1" /> Collections ({library.collections.length})
+                </TabsTrigger>
+                <TabsTrigger value="assets" className="!h-6 !px-2 !text-xs">
+                  <ImageIcon size={11} className="me-1" /> Assets ({assets.size})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {leftTab === "entities" && <AddEntityMenu onAdd={(k) => {
               update((l) => {
                 if (k === "xblock-problem") {
                   const uuid = crypto.randomUUID();
@@ -198,37 +249,54 @@ export default function LibraryEditorPage() {
                   });
                 }
               });
-            }} />
+            }} />}
           </CardHeader>
           <CardContent className="min-h-0 flex-1 overflow-auto p-2">
-            {library.entities.length === 0 ? (
-              <div className="grid h-full place-items-center text-xs text-default-400">
-                ยังไม่มี entity — กด + เพื่อเพิ่ม
-              </div>
+            {leftTab === "entities" ? (
+              library.entities.length === 0 ? (
+                <div className="grid h-full place-items-center text-xs text-default-400">
+                  ยังไม่มี entity — กด + เพื่อเพิ่ม
+                </div>
+              ) : (
+                <ul className="space-y-0.5">
+                  {library.entities.map((e, idx) => (
+                    <EntityRow
+                      key={e.key}
+                      entity={e}
+                      selected={selectedKey === e.key}
+                      canMoveUp={idx > 0}
+                      canMoveDown={idx < library.entities.length - 1}
+                      onMoveUp={() => update((l) => {
+                        const i = l.entities.findIndex((x) => x.key === e.key);
+                        if (i > 0) [l.entities[i - 1], l.entities[i]] = [l.entities[i], l.entities[i - 1]];
+                      })}
+                      onMoveDown={() => update((l) => {
+                        const i = l.entities.findIndex((x) => x.key === e.key);
+                        if (i >= 0 && i < l.entities.length - 1)
+                          [l.entities[i], l.entities[i + 1]] = [l.entities[i + 1], l.entities[i]];
+                      })}
+                      onClick={() => setSelectedKey(e.key)}
+                      onDelete={() => {
+                        if (!confirm(`ลบ "${entityTitle(e)}"?`)) return;
+                        update((l) => {
+                          l.entities = l.entities.filter((x) => x.key !== e.key);
+                          // also remove from any container's children
+                          for (const ent of l.entities) {
+                            if (isContainer(ent)) ent.children = ent.children.filter((c) => c !== e.key);
+                          }
+                          // and from collections
+                          for (const c of l.collections) c.entities = c.entities.filter((k) => k !== e.key);
+                        });
+                        if (selectedKey === e.key) setSelectedKey(null);
+                      }}
+                    />
+                  ))}
+                </ul>
+              )
+            ) : leftTab === "collections" ? (
+              <CollectionEditor library={library} onChange={update} />
             ) : (
-              <ul className="space-y-0.5">
-                {library.entities.map((e) => (
-                  <EntityRow
-                    key={e.key}
-                    entity={e}
-                    selected={selectedKey === e.key}
-                    onClick={() => setSelectedKey(e.key)}
-                    onDelete={() => {
-                      if (!confirm(`ลบ "${entityTitle(e)}"?`)) return;
-                      update((l) => {
-                        l.entities = l.entities.filter((x) => x.key !== e.key);
-                        // also remove from any container's children
-                        for (const ent of l.entities) {
-                          if (isContainer(ent)) ent.children = ent.children.filter((c) => c !== e.key);
-                        }
-                        // and from collections
-                        for (const c of l.collections) c.entities = c.entities.filter((k) => k !== e.key);
-                      });
-                      if (selectedKey === e.key) setSelectedKey(null);
-                    }}
-                  />
-                ))}
-              </ul>
+              <AssetUploader assets={assetFileView} onChange={handleAssetMapChange} />
             )}
           </CardContent>
         </Card>
@@ -282,10 +350,14 @@ function entityTitle(e: LibraryEntity): string {
 }
 
 function EntityRow({
-  entity, selected, onClick, onDelete,
+  entity, selected, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onClick, onDelete,
 }: {
   entity: LibraryEntity;
   selected: boolean;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
   onClick: () => void;
   onDelete: () => void;
 }) {
@@ -322,13 +394,34 @@ function EntityRow({
           {entity.containerKind}
         </Badge>
       )}
-      <button
-        onClick={(e) => { e.stopPropagation(); onDelete(); }}
-        className="rounded p-0.5 text-default-400 opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-        title="ลบ entity"
-      >
-        <Trash2 size={11} />
-      </button>
+      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <button
+          type="button"
+          disabled={!canMoveUp}
+          onClick={(ev) => { ev.stopPropagation(); onMoveUp(); }}
+          className="rounded p-0.5 text-default-400 hover:bg-default-100 hover:text-default-700 disabled:cursor-not-allowed disabled:opacity-30"
+          title="เลื่อนขึ้น"
+        >
+          <ArrowUp size={11} />
+        </button>
+        <button
+          type="button"
+          disabled={!canMoveDown}
+          onClick={(ev) => { ev.stopPropagation(); onMoveDown(); }}
+          className="rounded p-0.5 text-default-400 hover:bg-default-100 hover:text-default-700 disabled:cursor-not-allowed disabled:opacity-30"
+          title="เลื่อนลง"
+        >
+          <ArrowDown size={11} />
+        </button>
+        <button
+          type="button"
+          onClick={(ev) => { ev.stopPropagation(); onDelete(); }}
+          className="rounded p-0.5 text-default-400 hover:bg-destructive/10 hover:text-destructive"
+          title="ลบ entity"
+        >
+          <Trash2 size={11} />
+        </button>
+      </div>
     </li>
   );
 }
