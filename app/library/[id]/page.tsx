@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Library as LibIcon, Download, Plus, Trash2, FolderTree, Info, ChevronDown, FileText, HelpCircle, ArrowUp, ArrowDown, FolderOpen, ImageIcon } from "lucide-react";
+import { Library as LibIcon, Download, Info, FolderTree, FolderOpen, ImageIcon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CollectionEditor } from "@/components/CollectionEditor";
 import { AssetUploader, type AssetFile } from "@/components/AssetUploader";
@@ -10,30 +10,24 @@ import { libraryService } from "@/lib/domain";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { SaveIndicator } from "@/components/SaveIndicator";
 import { useAssetSync } from "@/lib/hooks/useAssetSync";
 import { useDebouncedAutosave } from "@/lib/hooks/useDebouncedAutosave";
 import { LibraryInfoDialog } from "@/components/LibraryInfoDialog";
-import { BlockEditor } from "@/components/BlockEditor";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { Block, Course } from "@/lib/schema";
 import type {
   Library,
-  LibraryEntity,
   LibraryContainer,
   LibraryXBlock,
   ContainerKind,
 } from "@/lib/library/schema";
-import { isContainer, isXBlock } from "@/lib/library/schema";
+import { isContainer } from "@/lib/library/schema";
 import { downloadLibraryZip } from "@/lib/library/export";
-import { cn } from "@/lib/utils";
-import { getBlockVisuals } from "@/lib/blockMeta";
+import { EntityRow } from "@/components/library/EntityRow";
+import { AddEntityMenu, type AddEntityKind } from "@/components/library/AddEntityMenu";
+import { ContainerEditor } from "@/components/library/ContainerEditor";
+import { XBlockEditor } from "@/components/library/XBlockEditor";
+import { entityTitle } from "@/components/library/entityTitle";
+import { makeLibraryEntity } from "@/components/library/createEntity";
 
 export default function LibraryEditorPage() {
   const router = useRouter();
@@ -181,59 +175,9 @@ export default function LibraryEditorPage() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            {leftTab === "entities" && <AddEntityMenu onAdd={(k) => {
-              update((l) => {
-                if (k === "xblock-problem") {
-                  const uuid = crypto.randomUUID();
-                  l.entities.push({
-                    kind: "xblock",
-                    key: `xblock.v1:problem:${uuid}`,
-                    title: "New Problem",
-                    xblockType: "problem",
-                    uuid,
-                    draftVersion: 1,
-                    publishedVersion: 1,
-                    canStandAlone: true,
-                    block: {
-                      type: "problem",
-                      displayName: "New Problem",
-                      problemType: "multiplechoice",
-                      question: "<p>คำถาม</p>",
-                      choices: [
-                        { text: "ตัวเลือก 1", correct: true },
-                        { text: "ตัวเลือก 2", correct: false },
-                      ],
-                    },
-                  });
-                } else if (k === "xblock-html") {
-                  const uuid = crypto.randomUUID();
-                  l.entities.push({
-                    kind: "xblock",
-                    key: `xblock.v1:html:${uuid}`,
-                    title: "New HTML",
-                    xblockType: "html",
-                    uuid,
-                    draftVersion: 1,
-                    publishedVersion: 1,
-                    canStandAlone: true,
-                    block: { type: "html", displayName: "New HTML", html: "<p>เนื้อหา</p>" },
-                  });
-                } else {
-                  const containerKind = k as ContainerKind;
-                  const slug = `${containerKind}-${Math.random().toString(36).slice(2, 8)}`;
-                  l.entities.push({
-                    kind: "container",
-                    key: slug,
-                    title: `New ${containerKind}`,
-                    containerKind,
-                    draftVersion: 1,
-                    publishedVersion: 1,
-                    canStandAlone: true,
-                    children: [],
-                  });
-                }
-              });
-            }} />}
+            {leftTab === "entities" && (
+              <AddEntityMenu onAdd={(k: AddEntityKind) => update((l) => { l.entities.push(makeLibraryEntity(k)); })} />
+            )}
           </CardHeader>
           <CardContent className="min-h-0 flex-1 overflow-auto p-2">
             {leftTab === "entities" ? (
@@ -326,219 +270,5 @@ export default function LibraryEditorPage() {
         onClose={() => setInfoOpen(false)}
       />
     </div>
-  );
-}
-
-function entityTitle(e: LibraryEntity): string {
-  return e.title || e.key;
-}
-
-function EntityRow({
-  entity, selected, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onClick, onDelete,
-}: {
-  entity: LibraryEntity;
-  selected: boolean;
-  canMoveUp: boolean;
-  canMoveDown: boolean;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  onClick: () => void;
-  onDelete: () => void;
-}) {
-  const containerColors: Record<ContainerKind, string> = {
-    section: "bg-primary text-primary-foreground",
-    subsection: "bg-info text-white",
-    unit: "bg-success text-white",
-  };
-  const vis = entity.kind === "xblock" ? getBlockVisuals((entity.block.type as Block["type"])) : null;
-  const Icon = vis?.icon;
-  const iconBg = vis?.iconBg ?? "";
-  return (
-    <li
-      className={cn(
-        "group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
-        selected ? "bg-primary/10 ring-1 ring-primary/30" : "hover:bg-default-100",
-      )}
-      onClick={onClick}
-    >
-      {entity.kind === "container" ? (
-        <span className={cn("grid size-6 shrink-0 place-items-center rounded text-[10px] font-semibold uppercase", containerColors[entity.containerKind])}>
-          {entity.containerKind.charAt(0)}
-        </span>
-      ) : (
-        Icon && (
-          <span className={cn("grid size-6 shrink-0 place-items-center rounded text-white", iconBg)}>
-            <Icon size={12} />
-          </span>
-        )
-      )}
-      <span className="flex-1 truncate">{entityTitle(entity)}</span>
-      {entity.kind === "container" && (
-        <Badge color="default" className="!h-5 !px-1.5 !text-2xs">
-          {entity.containerKind}
-        </Badge>
-      )}
-      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-        <button
-          type="button"
-          disabled={!canMoveUp}
-          onClick={(ev) => { ev.stopPropagation(); onMoveUp(); }}
-          className="rounded p-0.5 text-default-400 hover:bg-default-100 hover:text-default-700 disabled:cursor-not-allowed disabled:opacity-30"
-          title="เลื่อนขึ้น"
-        >
-          <ArrowUp size={11} />
-        </button>
-        <button
-          type="button"
-          disabled={!canMoveDown}
-          onClick={(ev) => { ev.stopPropagation(); onMoveDown(); }}
-          className="rounded p-0.5 text-default-400 hover:bg-default-100 hover:text-default-700 disabled:cursor-not-allowed disabled:opacity-30"
-          title="เลื่อนลง"
-        >
-          <ArrowDown size={11} />
-        </button>
-        <button
-          type="button"
-          onClick={(ev) => { ev.stopPropagation(); onDelete(); }}
-          className="rounded p-0.5 text-default-400 hover:bg-destructive/10 hover:text-destructive"
-          title="ลบ entity"
-        >
-          <Trash2 size={11} />
-        </button>
-      </div>
-    </li>
-  );
-}
-
-function AddEntityMenu({ onAdd }: { onAdd: (kind: string) => void }) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button color="primary" size="sm">
-          <Plus size={12} className="me-1" /> เพิ่ม
-          <ChevronDown size={11} className="ms-1 opacity-60" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-default-400">
-          Container
-        </DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => onAdd("section")}>
-          <span className="me-2 grid size-4 place-items-center rounded bg-primary text-[10px] font-semibold uppercase text-primary-foreground">S</span>
-          Section
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onAdd("subsection")}>
-          <span className="me-2 grid size-4 place-items-center rounded bg-info text-[10px] font-semibold uppercase text-white">S</span>
-          Subsection
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onAdd("unit")}>
-          <span className="me-2 grid size-4 place-items-center rounded bg-success text-[10px] font-semibold uppercase text-white">U</span>
-          Unit
-        </DropdownMenuItem>
-
-        <DropdownMenuSeparator />
-
-        <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-default-400">
-          XBlock
-        </DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => onAdd("xblock-problem")}>
-          <HelpCircle size={13} className="me-2 text-warning" /> Problem
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onAdd("xblock-html")}>
-          <FileText size={13} className="me-2 text-default-500" /> HTML
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function ContainerEditor({
-  lib, container, onChange,
-}: {
-  lib: Library;
-  container: LibraryContainer;
-  onChange: (fn: (c: LibraryContainer) => void) => void;
-}) {
-  const childCandidates = lib.entities.filter((e) => e.key !== container.key);
-  const childSet = new Set(container.children);
-  return (
-    <div className="space-y-4">
-      <div className="space-y-1.5">
-        <Label>ชื่อ</Label>
-        <Input value={container.title} onChange={(e) => onChange((c) => { c.title = e.target.value; })} />
-      </div>
-      <div className="space-y-1.5">
-        <Label>Key</Label>
-        <Input
-          className="!font-mono !text-xs"
-          value={container.key}
-          onChange={(e) => onChange((c) => { c.key = e.target.value; })}
-        />
-        <p className="text-xs text-default-400">
-          ใช้เป็น file slug ใน entities/&lt;key&gt;.toml — ควรเป็น kebab-case ไม่มีเว้นวรรค
-        </p>
-      </div>
-      <div className="space-y-2">
-        <Label>Children ({container.children.length})</Label>
-        <p className="text-xs text-default-400">ลำดับและสมาชิกของ container นี้</p>
-        <div className="max-h-64 space-y-1 overflow-auto rounded-md border p-2">
-          {childCandidates.length === 0 ? (
-            <p className="py-4 text-center text-xs text-default-400">ไม่มี entity อื่นให้เพิ่ม</p>
-          ) : childCandidates.map((cand) => (
-            <label key={cand.key} className="flex items-center gap-2 rounded p-1 text-sm hover:bg-default-50">
-              <input
-                type="checkbox"
-                checked={childSet.has(cand.key)}
-                onChange={(e) => onChange((c) => {
-                  if (e.target.checked) {
-                    if (!c.children.includes(cand.key)) c.children.push(cand.key);
-                  } else {
-                    c.children = c.children.filter((k) => k !== cand.key);
-                  }
-                })}
-              />
-              <span className="text-xs font-mono text-default-500">{cand.kind === "container" ? cand.containerKind : cand.xblockType}</span>
-              <span className="flex-1 truncate">{entityTitle(cand)}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Adapts LibraryXBlock into a one-block "Course" shape so we can reuse BlockEditor
-function XBlockEditor({
-  xblock, assets, onChange,
-}: {
-  xblock: LibraryXBlock;
-  assets: Map<string, File>;
-  onChange: (fn: (x: LibraryXBlock) => void) => void;
-}) {
-  // Wrap into a 1-chapter / 1-sequential / 1-vertical / 1-block shape
-  const fakeCourse: Course = {
-    course: { org: "lib", courseCode: "lib", run: "lib", displayName: "", language: "th", start: "2026-01-01T00:00:00Z", selfPaced: true, invitationOnly: false, catalogVisibility: "both" },
-    about: { courseImageName: "", overview: "", shortDescription: "", effort: "", duration: "", subtitle: "", introVideoYoutubeId: "" },
-    grading: { cutoffs: { Pass: 0.5 }, graders: [] },
-    chapters: [{ displayName: "", sequentials: [{ displayName: "", verticals: [{ displayName: "", blocks: [xblock.block] }] }] }],
-  };
-
-  const assetFileMap = new Map(Array.from(assets.entries()).map(([k, f]) => [k, { name: k, size: f.size, blob: f }]));
-
-  return (
-    <BlockEditor
-      course={fakeCourse}
-      path={{ ci: 0, si: 0, vi: 0, bi: 0 }}
-      onChange={(next) => {
-        const newBlock = next.chapters[0].sequentials[0].verticals[0].blocks[0];
-        onChange((x) => {
-          x.block = newBlock;
-          // Keep the entity title in sync with displayName so list shows the latest name
-          x.title = newBlock.displayName;
-        });
-      }}
-      assets={assetFileMap}
-      onAddAsset={(_file, suggestedName) => suggestedName ?? "asset"}
-    />
   );
 }
