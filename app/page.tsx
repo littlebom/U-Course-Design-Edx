@@ -116,6 +116,7 @@ function PageInner() {
         for (const [name, file] of map)
           assetMap.set(name, { name, size: file.size, blob: file });
         setAssets(assetMap);
+        latestAssetsRef.current = assetMap;
         await setMeta("currentCourseId", courseId);
 
         // Accept structure from markdown import page (session-passed)
@@ -153,23 +154,39 @@ function PageInner() {
   }, [course, hydrated, courseId]);
 
   // ── Asset CRUD: wrap setAssets to sync DB writes ───────────────────────
-  const handleAssetsChange = useCallback(async (next: Map<string, AssetFile>) => {
-    if (!courseId) { setAssets(next); return; }
-    const prevNames = new Set(assets.keys());
-    const nextNames = new Set(next.keys());
+  // Race-safe: latestAssetsRef tracks what we've actually written to DB so the
+  // diff doesn't rely on the React state closure (which can be stale during
+  // rapid add/delete). Operations are serialized via a chained promise so two
+  // close-together calls can't interleave puts and deletes for the same key.
+  const latestAssetsRef = useRef<Map<string, AssetFile>>(new Map());
+  const assetSyncChainRef = useRef<Promise<void>>(Promise.resolve());
+
+  const handleAssetsChange = useCallback((next: Map<string, AssetFile>): Promise<void> => {
     setAssets(next);
-    // Added or changed → write
-    for (const [name, af] of next) {
-      const prev = assets.get(name);
-      if (!prev || prev.blob !== af.blob) {
-        await putAsset(courseId, af.blob instanceof File ? af.blob : new File([af.blob], name), name);
+    if (!courseId) {
+      latestAssetsRef.current = next;
+      return Promise.resolve();
+    }
+    const run = async () => {
+      const prev = latestAssetsRef.current;
+      latestAssetsRef.current = next;
+      // Added or changed → write
+      for (const [name, af] of next) {
+        const old = prev.get(name);
+        if (!old || old.blob !== af.blob) {
+          const file = af.blob instanceof File ? af.blob : new File([af.blob], name);
+          await putAsset(courseId, file, name);
+        }
       }
-    }
-    // Removed → delete
-    for (const name of prevNames) {
-      if (!nextNames.has(name)) await deleteAsset(courseId, name);
-    }
-  }, [assets, courseId]);
+      // Removed → delete
+      for (const name of prev.keys()) {
+        if (!next.has(name)) await deleteAsset(courseId, name);
+      }
+    };
+    const chained = assetSyncChainRef.current.then(run, run);
+    assetSyncChainRef.current = chained.catch(() => {});
+    return chained;
+  }, [courseId]);
 
   const handleSave = async () => {
     setTopErr(null);
