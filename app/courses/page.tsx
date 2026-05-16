@@ -16,6 +16,7 @@ import { getStorageEstimate } from "@/lib/db";
 import { courseSchema } from "@/lib/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DbErrorBanner } from "@/components/DbErrorBanner";
 import { cn } from "@/lib/utils";
 
 export default function CoursesPage() {
@@ -129,9 +130,7 @@ export default function CoursesPage() {
       />
 
       <main className="mx-auto max-w-7xl px-6 py-6">
-        {error && (
-          <div className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</div>
-        )}
+        {error && <DbErrorBanner error={error} />}
 
         {storage && storage.quota > 0 && (
           <StorageBar

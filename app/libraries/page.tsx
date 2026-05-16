@@ -13,6 +13,7 @@ import { downloadLibraryZip } from "@/lib/library/export";
 import { putLibraryAsset, loadLibraryAssetsAsMap } from "@/lib/db/library-assets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DbErrorBanner } from "@/components/DbErrorBanner";
 import { cn } from "@/lib/utils";
 
 export default function LibrariesPage() {
@@ -90,9 +91,7 @@ export default function LibrariesPage() {
       />
 
       <main className="mx-auto max-w-7xl px-6 py-6">
-        {error && (
-          <div className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</div>
-        )}
+        {error && <DbErrorBanner error={error} />}
 
         <div className="mb-4 flex items-center gap-2 text-sm">
           <button
