@@ -34,7 +34,12 @@ export default function LibrariesPage() {
     }
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    // Data load — setState happens inside refresh() after async DB read, which is
+    // the canonical effect-as-data-loader pattern.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void refresh();
+  }, [refresh]);
 
   const visible = showTrash ? libraries.filter((l) => l.deletedAt) : libraries.filter((l) => !l.deletedAt);
 

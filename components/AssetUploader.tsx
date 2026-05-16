@@ -82,10 +82,13 @@ function AssetRow({
   const isImage = IMAGE_TYPES.includes(asset.blob.type) ||
     /\.(jpe?g|png|webp|gif|svg)$/i.test(asset.name);
 
+  // Creating a blob URL is the canonical "sync state with external resource" use of
+  // useEffect — we own the URL lifetime and revoke it on cleanup. Lint rule mis-flags this.
   useEffect(() => {
     if (!isImage) return;
     const objectUrl = URL.createObjectURL(asset.blob);
     urlRef.current = objectUrl;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUrl(objectUrl);
     return () => { URL.revokeObjectURL(objectUrl); urlRef.current = null; };
   }, [asset.blob, isImage]);
