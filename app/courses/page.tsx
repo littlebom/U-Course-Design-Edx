@@ -5,10 +5,7 @@ import { useRouter } from "next/navigation";
 import { BookOpen, Copy, Download, Plus, Trash2, Upload, RotateCcw, FileJson, HardDrive, Archive, ArchiveRestore, FileCode2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import type { CourseRecord } from "@/lib/db/types";
-import {
-  listCourses, createCourse, duplicateCourse,
-  softDeleteCourse, restoreCourse, hardDeleteCourse, purgeOldTrash,
-} from "@/lib/db/courses";
+import { courseService } from "@/lib/domain";
 import { migrateLegacyLocalStorage } from "@/lib/db/migrate";
 import { emptyCourseSeed, sampleCourseSeed } from "@/lib/db/seed";
 import { downloadBackup, importBackup } from "@/lib/db/backup";
@@ -30,7 +27,7 @@ export default function CoursesPage() {
 
   const refresh = useCallback(async () => {
     try {
-      const list = await listCourses(true);
+      const list = await courseService.list(true);
       setCourses(list);
       setStorage(await getStorageEstimate());
     } catch (e) {
@@ -42,7 +39,7 @@ export default function CoursesPage() {
 
   useEffect(() => {
     (async () => {
-      await purgeOldTrash(7).catch(() => {});
+      await courseService.purgeOldTrash(7).catch(() => {});
       const migratedId = await migrateLegacyLocalStorage().catch(() => null);
       await refresh();
       // If just migrated and there's only one course → jump straight into it.
@@ -54,7 +51,7 @@ export default function CoursesPage() {
 
   const handleCreate = async (seed: "blank" | "sample") => {
     const course = seed === "blank" ? emptyCourseSeed() : sampleCourseSeed();
-    const rec = await createCourse(course);
+    const rec = await courseService.create(course);
     router.push(`/?courseId=${rec.id}`);
   };
 
@@ -83,7 +80,7 @@ export default function CoursesPage() {
         alert(`JSON ไม่ตรง schema: ${result.error.issues[0]?.message ?? "unknown"}`);
         return;
       }
-      const rec = await createCourse(result.data);
+      const rec = await courseService.create(result.data);
       router.push(`/?courseId=${rec.id}`);
     } catch (e) {
       alert(`Import ล้มเหลว: ${e instanceof Error ? e.message : String(e)}`);
@@ -179,22 +176,22 @@ export default function CoursesPage() {
                 inTrash={!!c.deletedAt}
                 onOpen={() => router.push(`/?courseId=${c.id}`)}
                 onDuplicate={async () => {
-                  await duplicateCourse(c.id);
+                  await courseService.duplicate(c.id);
                   refresh();
                 }}
                 onSoftDelete={async () => {
                   if (confirm(`ย้าย "${c.name}" ไปถังขยะ?`)) {
-                    await softDeleteCourse(c.id);
+                    await courseService.softDelete(c.id);
                     refresh();
                   }
                 }}
                 onRestore={async () => {
-                  await restoreCourse(c.id);
+                  await courseService.restore(c.id);
                   refresh();
                 }}
                 onHardDelete={async () => {
                   if (confirm(`ลบ "${c.name}" ถาวร? ไม่สามารถกู้คืนได้`)) {
-                    await hardDeleteCourse(c.id);
+                    await courseService.hardDelete(c.id);
                     refresh();
                   }
                 }}

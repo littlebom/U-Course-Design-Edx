@@ -5,13 +5,10 @@ import { useRouter } from "next/navigation";
 import { Library as LibIcon, Copy, Download, Plus, Trash2, Upload, RotateCcw, FileJson, ArrowUpFromLine } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import type { LibraryRecord } from "@/lib/db/libraries";
-import {
-  listLibraries, createLibrary, softDeleteLibrary, restoreLibrary, hardDeleteLibrary, emptyLibrary,
-} from "@/lib/db/libraries";
+import { libraryService } from "@/lib/domain";
 import { parseLibraryZip } from "@/lib/library/import";
 import { parseLibraryV1Tar } from "@/lib/library/import-v1";
 import { downloadLibraryZip } from "@/lib/library/export";
-import { putLibraryAsset, loadLibraryAssetsAsMap } from "@/lib/db/library-assets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DbErrorBanner } from "@/components/DbErrorBanner";
@@ -26,7 +23,7 @@ export default function LibrariesPage() {
 
   const refresh = useCallback(async () => {
     try {
-      setLibraries(await listLibraries(true));
+      setLibraries(await libraryService.list(true));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -44,7 +41,7 @@ export default function LibrariesPage() {
   const visible = showTrash ? libraries.filter((l) => l.deletedAt) : libraries.filter((l) => !l.deletedAt);
 
   const handleCreate = async () => {
-    const rec = await createLibrary(emptyLibrary());
+    const rec = await libraryService.create(libraryService.empty());
     router.push(`/library/${rec.id}`);
   };
 
@@ -52,8 +49,8 @@ export default function LibrariesPage() {
     try {
       const buf = await file.arrayBuffer();
       const { library, warnings, assets } = await parseLibraryZip(buf);
-      const rec = await createLibrary(library);
-      for (const [key, f] of assets) await putLibraryAsset(rec.id, key, f);
+      const rec = await libraryService.create(library);
+      for (const [key, f] of assets) await libraryService.putAsset(rec.id, key, f);
       if (warnings.length) console.warn("Library import warnings:", warnings);
       router.push(`/library/${rec.id}`);
     } catch (e) {
@@ -66,8 +63,8 @@ export default function LibrariesPage() {
       const buf = await file.arrayBuffer();
       // Default to flat structure; user can wrap manually later via Add Section
       const { library, warnings, assets, stats } = await parseLibraryV1Tar(buf, { wrapMode: "flat" });
-      const rec = await createLibrary(library);
-      for (const [key, f] of assets) await putLibraryAsset(rec.id, key, f);
+      const rec = await libraryService.create(library);
+      for (const [key, f] of assets) await libraryService.putAsset(rec.id, key, f);
       const msg = `✅ Upgraded ${stats.blockCount} block จาก Library v1 → v2${stats.skippedCount > 0 ? ` (ข้าม ${stats.skippedCount})` : ""}`;
       if (warnings.length) console.warn("Library v1 import warnings:", warnings);
       alert(msg);
@@ -78,7 +75,7 @@ export default function LibrariesPage() {
   };
 
   const handleExport = async (rec: LibraryRecord) => {
-    const assets = await loadLibraryAssetsAsMap(rec.id);
+    const assets = await libraryService.loadAssetsAsMap(rec.id);
     const warnings = await downloadLibraryZip(rec.library, assets);
     if (warnings.length > 0) {
       alert(`Export สำเร็จ — มีคำเตือน ${warnings.length} รายการ:\n\n${warnings.join("\n")}`);
@@ -163,16 +160,16 @@ export default function LibrariesPage() {
                 inTrash={!!l.deletedAt}
                 onOpen={() => router.push(`/library/${l.id}`)}
                 onDuplicate={async () => {
-                  await createLibrary({ ...l.library, learningPackage: { ...l.library.learningPackage, title: `${l.library.learningPackage.title} (Copy)` } });
+                  await libraryService.create({ ...l.library, learningPackage: { ...l.library.learningPackage, title: `${l.library.learningPackage.title} (Copy)` } });
                   refresh();
                 }}
                 onExport={() => handleExport(l)}
                 onSoftDelete={async () => {
-                  if (confirm(`ย้าย "${l.name}" ไปถังขยะ?`)) { await softDeleteLibrary(l.id); refresh(); }
+                  if (confirm(`ย้าย "${l.name}" ไปถังขยะ?`)) { await libraryService.softDelete(l.id); refresh(); }
                 }}
-                onRestore={async () => { await restoreLibrary(l.id); refresh(); }}
+                onRestore={async () => { await libraryService.restore(l.id); refresh(); }}
                 onHardDelete={async () => {
-                  if (confirm(`ลบ "${l.name}" ถาวร?`)) { await hardDeleteLibrary(l.id); refresh(); }
+                  if (confirm(`ลบ "${l.name}" ถาวร?`)) { await libraryService.hardDelete(l.id); refresh(); }
                 }}
               />
             ))}

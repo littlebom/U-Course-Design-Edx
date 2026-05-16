@@ -23,7 +23,6 @@ import { BlockEditor } from "@/components/BlockEditor";
 import { JsonDropzone, type JsonDropzoneHandle } from "@/components/JsonDropzone";
 import { OlxDropzone, type OlxDropzoneHandle } from "@/components/OlxDropzone";
 import { AssetUploader, type AssetFile } from "@/components/AssetUploader";
-import { collectCourseAssetRefs, purgeOrphanCourseAssets } from "@/lib/db/gc";
 import { ValidationPanel } from "@/components/ValidationPanel";
 import { ExportButton } from "@/components/ExportButton";
 import { BulkProblemImport } from "@/components/BulkProblemImport";
@@ -36,9 +35,8 @@ import { useDebouncedAutosave } from "@/lib/hooks/useDebouncedAutosave";
 import { useSidebarPref } from "@/lib/hooks/useSidebarPref";
 import { Navbar } from "@/components/Navbar";
 import { downloadCourseJson } from "@/lib/persist";
-import { getCourse, saveCourse } from "@/lib/db/courses";
+import { courseService } from "@/lib/domain";
 import { setMeta } from "@/lib/db";
-import { deleteAsset, loadAssetsAsMap, putAsset } from "@/lib/db/assets";
 import {
   saveAsCourseFile,
   supportsFileSystemAccess,
@@ -93,9 +91,9 @@ function PageInner() {
     onPut: async (name, af) => {
       if (!courseId) return;
       const file = af.blob instanceof File ? af.blob : new File([af.blob], name);
-      await putAsset(courseId, file, name);
+      await courseService.putAsset(courseId, file, name);
     },
-    onDelete: async (name) => { if (courseId) await deleteAsset(courseId, name); },
+    onDelete: async (name) => { if (courseId) await courseService.deleteAsset(courseId, name); },
     onError: (e) => setTopErr(e instanceof Error ? e.message : String(e)),
   });
   const assets = assetSync.assets;
@@ -110,14 +108,14 @@ function PageInner() {
     let cancelled = false;
     (async () => {
       try {
-        const rec = await getCourse(courseId);
+        const rec = await courseService.get(courseId);
         if (!rec) {
           router.replace("/courses");
           return;
         }
         if (cancelled) return;
         setCourse(rec.course);
-        const map = await loadAssetsAsMap(courseId);
+        const map = await courseService.loadAssetsAsMap(courseId);
         const assetMap = new Map<string, AssetFile>();
         for (const [name, file] of map)
           assetMap.set(name, { name, size: file.size, blob: file });
@@ -148,7 +146,7 @@ function PageInner() {
     600,
     async (v) => {
       if (!courseId) return;
-      await saveCourse(courseId, v);
+      await courseService.save(courseId, v);
     },
   );
 
@@ -407,7 +405,7 @@ function PageInner() {
                   รูปภาพ / ไฟล์
                 </CardTitle>
                 {(() => {
-                  const referenced = collectCourseAssetRefs(course);
+                  const referenced = courseService.collectAssetRefs(course);
                   const orphans = Array.from(assets.keys()).filter((k) => !referenced.has(k));
                   if (orphans.length === 0) return null;
                   return (
@@ -419,7 +417,7 @@ function PageInner() {
                       onClick={async () => {
                         if (!courseId) return;
                         if (!confirm(`ลบ ${orphans.length} asset ที่ไม่มี block อ้างถึง?\n\n${orphans.slice(0, 8).join("\n")}${orphans.length > 8 ? `\n…และอีก ${orphans.length - 8}` : ""}`)) return;
-                        await purgeOrphanCourseAssets(courseId, course);
+                        await courseService.purgeOrphanAssets(courseId, course);
                         // Reload assets state from latest DB-truth
                         const next = new Map(assets);
                         for (const o of orphans) next.delete(o);

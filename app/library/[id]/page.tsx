@@ -6,7 +6,7 @@ import { Library as LibIcon, Download, Plus, Trash2, FolderTree, Info, ChevronDo
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CollectionEditor } from "@/components/CollectionEditor";
 import { AssetUploader, type AssetFile } from "@/components/AssetUploader";
-import { deleteLibraryAsset, putLibraryAsset } from "@/lib/db/library-assets";
+import { libraryService } from "@/lib/domain";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,8 +31,6 @@ import type {
   ContainerKind,
 } from "@/lib/library/schema";
 import { isContainer, isXBlock } from "@/lib/library/schema";
-import { getLibrary, saveLibrary } from "@/lib/db/libraries";
-import { loadLibraryAssetsAsMap } from "@/lib/db/library-assets";
 import { downloadLibraryZip } from "@/lib/library/export";
 import { cn } from "@/lib/utils";
 import { getBlockVisuals } from "@/lib/blockMeta";
@@ -54,8 +52,8 @@ export default function LibraryEditorPage() {
   // AssetUploader speaks Map<string, AssetFile>; the hook lets us store File directly and
   // adapt at the boundary.
   const assetSync = useAssetSync<File>({
-    onPut: async (key, file) => { if (libraryId) await putLibraryAsset(libraryId, key, file); },
-    onDelete: async (key) => { if (libraryId) await deleteLibraryAsset(libraryId, key); },
+    onPut: async (key, file) => { if (libraryId) await libraryService.putAsset(libraryId, key, file); },
+    onDelete: async (key) => { if (libraryId) await libraryService.deleteAsset(libraryId, key); },
     onError: (e) => setErr(e instanceof Error ? e.message : String(e)),
   });
   const assets = assetSync.assets;
@@ -89,11 +87,11 @@ export default function LibraryEditorPage() {
     let cancelled = false;
     (async () => {
       try {
-        const rec = await getLibrary(libraryId);
+        const rec = await libraryService.get(libraryId);
         if (!rec) { router.replace("/libraries"); return; }
         if (cancelled) return;
         setLibrary(rec.library);
-        assetSync.hydrate(await loadLibraryAssetsAsMap(libraryId));
+        assetSync.hydrate(await libraryService.loadAssetsAsMap(libraryId));
         setHydrated(true);
       } catch (e) {
         setErr(e instanceof Error ? e.message : String(e));
@@ -107,7 +105,7 @@ export default function LibraryEditorPage() {
     library,
     hydrated && !!library && !!libraryId,
     600,
-    async (v) => { if (libraryId && v) await saveLibrary(libraryId, v); },
+    async (v) => { if (libraryId && v) await libraryService.save(libraryId, v); },
   );
 
   const update = useCallback((fn: (lib: Library) => void) => {
