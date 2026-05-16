@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Library as LibIcon, Download, Plus, Trash2, FolderTree, Box } from "lucide-react";
+import { Library as LibIcon, Download, Plus, Trash2, FolderTree, Info } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { SaveIndicator } from "@/components/SaveIndicator";
+import { LibraryInfoDialog } from "@/components/LibraryInfoDialog";
 import { BlockEditor } from "@/components/BlockEditor";
 import type { Block, Course } from "@/lib/schema";
 import type {
@@ -40,6 +41,7 @@ export default function LibraryEditorPage() {
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -101,16 +103,24 @@ export default function LibraryEditorPage() {
     <div className="flex h-screen flex-col bg-default-50">
       <Navbar
         brand={
-          <div className="flex max-w-xs items-center gap-2 truncate text-sm font-medium text-default-700">
+          <button
+            type="button"
+            onClick={() => setInfoOpen(true)}
+            className="flex max-w-xs items-center gap-2 truncate rounded px-1.5 py-1 text-sm font-medium text-default-700 hover:bg-default-100"
+            title="แก้ไขข้อมูล Library"
+          >
             <LibIcon size={14} className="shrink-0 text-primary" />
             <span className="truncate">{library.learningPackage.title}</span>
-          </div>
+          </button>
         }
         left={<div className="ml-2"><SaveIndicator status={saveStatus} savedAt={savedAt} /></div>}
         right={
           <>
             <Button variant="ghost" size="sm" onClick={() => router.push("/libraries")}>
               ← Libraries
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setInfoOpen(true)}>
+              <Info size={14} className="me-1.5" /> Library Info
             </Button>
             <Button color="primary" size="sm" onClick={handleExport}>
               <Download size={14} className="me-1.5" /> Export .zip
@@ -124,39 +134,6 @@ export default function LibraryEditorPage() {
       )}
 
       <main className="grid flex-1 grid-cols-12 gap-4 overflow-hidden p-4">
-        <Card className="col-span-3 flex min-h-0 flex-col overflow-hidden">
-          <CardHeader className="shrink-0 border-b py-3">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-default-500">
-              ข้อมูล Library
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 p-3 text-sm">
-            <div className="space-y-1">
-              <Label>ชื่อ</Label>
-              <Input
-                value={library.learningPackage.title}
-                onChange={(e) => update((l) => { l.learningPackage.title = e.target.value; })}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Key</Label>
-              <Input
-                className="!font-mono !text-xs"
-                value={library.learningPackage.key}
-                onChange={(e) => update((l) => { l.learningPackage.key = e.target.value; })}
-                placeholder="lib:Org:Code"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>คำอธิบาย</Label>
-              <Input
-                value={library.learningPackage.description}
-                onChange={(e) => update((l) => { l.learningPackage.description = e.target.value; })}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="col-span-4 flex min-h-0 flex-col overflow-hidden">
           <CardHeader className="flex shrink-0 flex-row items-center justify-between border-b py-3">
             <CardTitle className="text-sm font-semibold uppercase tracking-wider text-default-500">
@@ -249,7 +226,7 @@ export default function LibraryEditorPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-5 flex min-h-0 flex-col overflow-hidden">
+        <Card className="col-span-8 flex min-h-0 flex-col overflow-hidden">
           <CardHeader className="shrink-0 border-b py-3">
             <CardTitle className="text-sm font-semibold uppercase tracking-wider text-default-500">
               {selected ? `แก้ไข: ${entityTitle(selected)}` : "ตัวแก้ไข"}
@@ -282,6 +259,13 @@ export default function LibraryEditorPage() {
           </CardContent>
         </Card>
       </main>
+
+      <LibraryInfoDialog
+        open={infoOpen}
+        library={library}
+        onChange={update}
+        onClose={() => setInfoOpen(false)}
+      />
     </div>
   );
 }
