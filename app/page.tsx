@@ -3,15 +3,12 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  GraduationCap,
   Plus,
   Info,
   Save,
   RotateCcw,
   CheckCircle2,
   Download,
-  Upload,
-  FileText,
   FileCode2,
   PackageOpen,
   Link2,
@@ -19,8 +16,6 @@ import {
   PanelRightClose,
   Settings,
   ChevronDown,
-  X,
-  BookOpen,
 } from "lucide-react";
 import type { Course, ProblemBlock } from "@/lib/schema";
 import { sampleCourse } from "@/lib/sample";
@@ -37,6 +32,7 @@ import { CourseInfoDialog } from "@/components/CourseInfoDialog";
 import { SequentialEditor } from "@/components/SequentialEditor";
 import { CourseSwitcher } from "@/components/CourseSwitcher";
 import { SaveIndicator } from "@/components/SaveIndicator";
+import { Navbar } from "@/components/Navbar";
 import { downloadCourseJson } from "@/lib/persist";
 import { getCourse, saveCourse } from "@/lib/db/courses";
 import { setMeta } from "@/lib/db";
@@ -51,8 +47,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
@@ -75,7 +69,6 @@ function PageInner() {
 
   const [course, setCourse] = useState<Course>(sampleCourse);
   const [assets, setAssets] = useState<Map<string, AssetFile>>(new Map());
-  const [courseName, setCourseName] = useState<string>("");
   const [confirmReset, setConfirmReset] = useState(false);
   const [sel, setSel] = useState<Sel>({ ci: 0, si: 0, vi: 0, bi: 0 });
   const [seqSel, setSeqSel] = useState<SeqSel>(null);
@@ -106,7 +99,6 @@ function PageInner() {
   }, [sidebarOpen, hydrated]);
 
   // ── Load course + assets from DB on mount / courseId change ────────────
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!courseId) {
       router.replace("/courses");
@@ -122,7 +114,6 @@ function PageInner() {
         }
         if (cancelled) return;
         setCourse(rec.course);
-        setCourseName(rec.name);
         const map = await loadAssetsAsMap(courseId);
         const assetMap = new Map<string, AssetFile>();
         for (const [name, file] of map)
@@ -146,13 +137,12 @@ function PageInner() {
     })();
     return () => { cancelled = true; };
   }, [courseId, router]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   // ── Debounced save course → DB ─────────────────────────────────────────
   useEffect(() => {
     if (!hydrated || !courseId) return;
-    setSaveStatus("saving");
     const t = setTimeout(async () => {
+      setSaveStatus("saving");
       try {
         await saveCourse(courseId, course);
         setSaveStatus("saved");
@@ -272,161 +262,142 @@ function PageInner() {
 
   return (
     <div className="flex h-screen flex-col bg-default-50">
-      <header className="flex flex-wrap items-center gap-2 border-b bg-header px-4 py-2.5 shadow-base">
-        {/* Logo */}
-        <span className="grid size-8 place-items-center rounded-md bg-primary text-primary-foreground shadow-base">
-          <GraduationCap size={18} />
-        </span>
-
-        <Separator orientation="vertical" className="h-6" />
-
-        {/* Course name */}
-        <div className="text-sm font-medium text-default-700 truncate max-w-xs">
-          {course.course.displayName}
-          <span className="ml-2 text-xs text-default-400">
-            {course.course.org}/{course.course.courseCode}/{course.course.run}
-          </span>
-        </div>
-
-        {/* Save indicator */}
-        <div className="ml-3 flex items-center">
-          {linkedFile ? (
-            <span
-              className="flex max-w-[180px] items-center gap-1 truncate rounded-md bg-success/10 px-2 py-1 text-2xs font-medium text-success ring-1 ring-success/20"
-              title={`เชื่อมกับไฟล์ ${linkedFile.name}`}
-            >
-              <Link2 size={11} />
-              <span className="truncate">{linkedFile.name}</span>
-              {linkedSavedAt && <CheckCircle2 size={11} />}
+      <Navbar
+        showBackToCourses
+        brand={
+          <div className="flex max-w-xs items-center gap-2 truncate text-sm font-medium text-default-700">
+            <span className="truncate">{course.course.displayName}</span>
+            <span className="text-xs text-default-400">
+              {course.course.org}/{course.course.courseCode}/{course.course.run}
             </span>
-          ) : (
-            <SaveIndicator status={saveStatus} savedAt={savedAt} />
-          )}
-        </div>
-
-        <div className="ml-3">
-          <CourseSwitcher currentCourseId={courseId} />
-        </div>
-
-        <div className="ml-auto flex items-center gap-2">
-          {/* Course Info */}
-          <Button variant="outline" size="sm" onClick={() => setInfoOpen(true)}>
-            <Info size={14} className="me-1.5" /> Course Info
-          </Button>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* File dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Settings size={14} className="me-1.5" /> File
-                <ChevronDown size={12} className="ml-1 opacity-60" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              {/* Import */}
-              <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-default-400">
-                Import
-              </DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => xmlRef.current?.open()}>
-                <FileCode2 size={13} className="me-2 text-default-500" /> Import XML
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => olxRef.current?.open()}>
-                <PackageOpen size={13} className="me-2 text-default-500" /> Import OLX (.tar.gz)
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator />
-
-              {/* Template */}
-              <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-default-400">
-                Template
-              </DropdownMenuLabel>
-              {fsaSupported && (
-                <DropdownMenuItem onClick={handleDownloadTemplates}>
-                  <Download size={13} className="me-2 text-default-500" /> XML Template
-                </DropdownMenuItem>
-              )}
-
-              <DropdownMenuSeparator />
-
-              {/* Save & Export */}
-              <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-default-400">
-                Save & Export
-              </DropdownMenuLabel>
-              <DropdownMenuItem onClick={handleSave}>
-                <Save size={13} className="me-2 text-default-500" />
-                {linkedFile ? "Save" : fsaSupported ? "Save As..." : "Save JSON"}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Export OLX */}
-          <ExportButton course={course} assets={assets} disabled={hasErrors} />
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* Reset */}
-          <Button variant="ghost" size="sm" onClick={() => setConfirmReset(true)} className="text-default-500 hover:text-destructive">
-            <RotateCcw size={14} />
-          </Button>
-
-          {/* Sidebar toggle — แสดงเฉพาะตอน sidebar ปิด */}
-          {!sidebarOpen && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSidebarOpen(true)}
-              title="แสดง sidebar"
-              className="!h-9 !w-9"
-            >
-              <PanelRightOpen size={16} />
-            </Button>
-          )}
-        </div>
-
-        {/* Hidden dropzones */}
-        <JsonDropzone
-          ref={xmlRef}
-          onLoad={(c) => { setCourse(c); setImportWarnings([]); }}
-          onError={setTopErr}
-          onWarnings={setImportWarnings}
-        />
-        <OlxDropzone
-          ref={olxRef}
-          onLoad={(c, w, olxAssets) => {
-            setCourse(c);
-            setImportWarnings(w);
-            setTopErr(null);
-            if (olxAssets.size > 0) {
-              const next = new Map(assets);
-              for (const [name, file] of olxAssets)
-                next.set(name, { name, size: file.size, blob: file });
-              void handleAssetsChange(next);
-            }
-          }}
-          onError={setTopErr}
-        />
-
-        {topErr && (
-          <div className="w-full rounded-md bg-destructive/10 px-3 py-1.5 text-xs text-destructive ring-1 ring-destructive/20">
-            {topErr}
           </div>
-        )}
-        <Dialog open={importWarnings.length > 0} onOpenChange={(open) => { if (!open) setImportWarnings([]); }}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Import สำเร็จ — พบ {importWarnings.length} รายการที่ถูกปรับแก้อัตโนมัติ</DialogTitle>
-            </DialogHeader>
-            <ul className="max-h-[60vh] overflow-auto list-disc space-y-1 pl-5 text-sm text-default-700">
-              {importWarnings.map((w, i) => <li key={i} className="break-words">{w}</li>)}
-            </ul>
-            <DialogFooter>
-              <Button onClick={() => setImportWarnings([])}>ปิด</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </header>
+        }
+        left={
+          <>
+            <div className="ml-2 flex items-center">
+              {linkedFile ? (
+                <span
+                  className="flex max-w-[180px] items-center gap-1 truncate rounded-md bg-success/10 px-2 py-1 text-2xs font-medium text-success ring-1 ring-success/20"
+                  title={`เชื่อมกับไฟล์ ${linkedFile.name}`}
+                >
+                  <Link2 size={11} />
+                  <span className="truncate">{linkedFile.name}</span>
+                  {linkedSavedAt && <CheckCircle2 size={11} />}
+                </span>
+              ) : (
+                <SaveIndicator status={saveStatus} savedAt={savedAt} />
+              )}
+            </div>
+            <div className="ml-2">
+              <CourseSwitcher currentCourseId={courseId} />
+            </div>
+          </>
+        }
+        right={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => setConfirmReset(true)} className="text-default-500 hover:text-destructive" title="Reset">
+              <RotateCcw size={14} />
+            </Button>
+
+            <Separator orientation="vertical" className="h-6" />
+
+            <Button variant="outline" size="sm" onClick={() => setInfoOpen(true)}>
+              <Info size={14} className="me-1.5" /> Course Info
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Settings size={14} className="me-1.5" /> File
+                  <ChevronDown size={12} className="ml-1 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-default-400">
+                  Import
+                </DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => xmlRef.current?.open()}>
+                  <FileCode2 size={13} className="me-2 text-default-500" /> Import XML
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => olxRef.current?.open()}>
+                  <PackageOpen size={13} className="me-2 text-default-500" /> Import OLX (.tar.gz)
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-default-400">
+                  Template
+                </DropdownMenuLabel>
+                {fsaSupported && (
+                  <DropdownMenuItem onClick={handleDownloadTemplates}>
+                    <Download size={13} className="me-2 text-default-500" /> XML Template
+                  </DropdownMenuItem>
+                )}
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-default-400">
+                  Save & Export
+                </DropdownMenuLabel>
+                <DropdownMenuItem onClick={handleSave}>
+                  <Save size={13} className="me-2 text-default-500" />
+                  {linkedFile ? "Save" : fsaSupported ? "Save As..." : "Save JSON"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Separator orientation="vertical" className="h-6" />
+
+            <ExportButton course={course} assets={assets} disabled={hasErrors} />
+
+            {!sidebarOpen && (
+              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} title="แสดง sidebar" className="!h-9 !w-9">
+                <PanelRightOpen size={16} />
+              </Button>
+            )}
+          </>
+        }
+      />
+
+      {/* Hidden dropzones + transient dialogs */}
+      <JsonDropzone
+        ref={xmlRef}
+        onLoad={(c) => { setCourse(c); setImportWarnings([]); }}
+        onError={setTopErr}
+        onWarnings={setImportWarnings}
+      />
+      <OlxDropzone
+        ref={olxRef}
+        onLoad={(c, w, olxAssets) => {
+          setCourse(c);
+          setImportWarnings(w);
+          setTopErr(null);
+          if (olxAssets.size > 0) {
+            const next = new Map(assets);
+            for (const [name, file] of olxAssets)
+              next.set(name, { name, size: file.size, blob: file });
+            void handleAssetsChange(next);
+          }
+        }}
+        onError={setTopErr}
+      />
+
+      {topErr && (
+        <div className="border-b bg-destructive/10 px-4 py-1.5 text-xs text-destructive">{topErr}</div>
+      )}
+      <Dialog open={importWarnings.length > 0} onOpenChange={(open) => { if (!open) setImportWarnings([]); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Import สำเร็จ — พบ {importWarnings.length} รายการที่ถูกปรับแก้อัตโนมัติ</DialogTitle>
+          </DialogHeader>
+          <ul className="max-h-[60vh] overflow-auto list-disc space-y-1 pl-5 text-sm text-default-700">
+            {importWarnings.map((w, i) => <li key={i} className="break-words">{w}</li>)}
+          </ul>
+          <DialogFooter>
+            <Button onClick={() => setImportWarnings([])}>ปิด</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <main
         className={cn(

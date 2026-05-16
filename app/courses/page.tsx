@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, Copy, Download, Plus, Trash2, Upload, RotateCcw, FileJson, HardDrive, Archive, ArchiveRestore } from "lucide-react";
+import { Navbar } from "@/components/Navbar";
 import type { CourseRecord } from "@/lib/db/types";
 import {
   listCourses, createCourse, duplicateCourse,
@@ -73,21 +74,23 @@ export default function CoursesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b bg-card/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <Navbar
+        brand={
           <div className="flex items-center gap-2">
-            <BookOpen size={20} className="text-primary" />
-            <h1 className="text-lg font-semibold">รายวิชาของฉัน</h1>
-            <span className="text-sm text-default-400">
+            <BookOpen size={16} className="text-primary" />
+            <span className="text-sm font-semibold text-default-700">รายวิชาของฉัน</span>
+            <span className="text-xs text-default-400">
               ({courses.filter((c) => !c.deletedAt).length} รายวิชา
               {courses.some((c) => c.deletedAt) && ` · ${courses.filter((c) => c.deletedAt).length} ในถังขยะ`})
             </span>
           </div>
-          <div className="flex items-center gap-2">
+        }
+        right={
+          <>
             <Button variant="ghost" size="sm" onClick={() => downloadBackup()} title="สำรองข้อมูลทุกคอร์ส">
-              <Archive size={14} className="me-1" /> Backup
+              <Archive size={14} className="me-1.5" /> Backup
             </Button>
-            <label className="inline-flex cursor-pointer items-center gap-1 rounded-md px-3 py-1.5 text-sm hover:bg-accent" title="กู้คืนจากไฟล์ backup">
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-default-700 hover:bg-default hover:text-default-foreground" title="กู้คืนจากไฟล์ backup">
               <ArchiveRestore size={14} /> Restore
               <input
                 type="file"
@@ -107,7 +110,7 @@ export default function CoursesPage() {
                 }}
               />
             </label>
-            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:bg-accent">
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-default px-3 py-1.5 text-sm text-default hover:bg-default hover:text-default-foreground">
               <Upload size={14} /> Import JSON
               <input
                 type="file"
@@ -116,15 +119,15 @@ export default function CoursesPage() {
                 onChange={(e) => e.target.files?.[0] && handleImportJson(e.target.files[0])}
               />
             </label>
-            <Button onClick={() => handleCreate("blank")} variant="outline">
-              <FileJson size={14} className="me-1" /> สร้างคอร์สเปล่า
+            <Button onClick={() => handleCreate("blank")} variant="outline" size="sm">
+              <FileJson size={14} className="me-1.5" /> สร้างคอร์สเปล่า
             </Button>
-            <Button onClick={() => handleCreate("sample")}>
-              <Plus size={14} className="me-1" /> สร้างจากตัวอย่าง
+            <Button onClick={() => handleCreate("sample")} color="primary" size="sm">
+              <Plus size={14} className="me-1.5" /> สร้างจากตัวอย่าง
             </Button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <main className="mx-auto max-w-7xl px-6 py-6">
         {error && (

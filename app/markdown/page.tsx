@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
-  GraduationCap,
   ArrowLeft,
   FileText,
   ChevronRight,
@@ -12,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
+import { Navbar } from "@/components/Navbar";
 import type { Chapter, Sequential, Vertical } from "@/lib/schema";
 
 // ─── Parser ──────────────────────────────────────────────────────────────────
@@ -178,34 +177,35 @@ export default function MarkdownImportPage() {
 
   return (
     <div className="flex h-screen flex-col bg-default-50">
-      {/* Header */}
-      <header className="flex items-center gap-3 border-b bg-header px-4 py-2.5 shadow-base">
-        <span className="grid size-8 place-items-center rounded-md bg-primary text-primary-foreground shadow-base">
-          <GraduationCap size={18} />
-        </span>
-        <Separator orientation="vertical" className="h-6" />
-        <Pilcrow size={16} className="text-default-500" />
-        <span className="text-sm font-semibold text-default-700">
-          Import โครงสร้างจาก Markdown
-        </span>
-
-        <div className="ml-auto flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => router.push("/")}>
-            <ArrowLeft size={14} className="me-1.5" /> กลับ
-          </Button>
-          <Button
-            color="primary"
-            size="sm"
-            disabled={chapters.length === 0}
-            onClick={handleImport}
-          >
-            Import{" "}
-            {totalUnits > 0
-              ? `(${totalSections} Section · ${totalSubSections} SubSection · ${totalUnits} Unit)`
-              : ""}
-          </Button>
-        </div>
-      </header>
+      <Navbar
+        showBackToCourses
+        brand={
+          <div className="flex items-center gap-2">
+            <Pilcrow size={16} className="text-default-500" />
+            <span className="text-sm font-semibold text-default-700">
+              Import โครงสร้างจาก Markdown
+            </span>
+          </div>
+        }
+        right={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
+              <ArrowLeft size={14} className="me-1.5" /> กลับไปยัง Editor
+            </Button>
+            <Button
+              color="primary"
+              size="sm"
+              disabled={chapters.length === 0}
+              onClick={handleImport}
+            >
+              Import{" "}
+              {totalUnits > 0
+                ? `(${totalSections} Section · ${totalSubSections} SubSection · ${totalUnits} Unit)`
+                : ""}
+            </Button>
+          </>
+        }
+      />
 
       {/* Body */}
       <main className="grid flex-1 min-h-0 grid-cols-2 gap-0 overflow-hidden">
