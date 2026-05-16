@@ -23,6 +23,7 @@ import { BlockEditor } from "@/components/BlockEditor";
 import { JsonDropzone, type JsonDropzoneHandle } from "@/components/JsonDropzone";
 import { OlxDropzone, type OlxDropzoneHandle } from "@/components/OlxDropzone";
 import { AssetUploader, type AssetFile } from "@/components/AssetUploader";
+import { collectCourseAssetRefs, purgeOrphanCourseAssets } from "@/lib/db/gc";
 import { ValidationPanel } from "@/components/ValidationPanel";
 import { ExportButton } from "@/components/ExportButton";
 import { BulkProblemImport } from "@/components/BulkProblemImport";
@@ -438,10 +439,34 @@ function PageInner() {
         {sidebarOpen && (
           <aside className="col-span-3 flex min-h-0 flex-col gap-4">
             <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              <CardHeader className="shrink-0 border-b py-3">
+              <CardHeader className="flex shrink-0 flex-row items-center justify-between border-b py-3">
                 <CardTitle className="text-sm font-semibold uppercase tracking-wider text-default-500">
                   รูปภาพ / ไฟล์
                 </CardTitle>
+                {(() => {
+                  const referenced = collectCourseAssetRefs(course);
+                  const orphans = Array.from(assets.keys()).filter((k) => !referenced.has(k));
+                  if (orphans.length === 0) return null;
+                  return (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="!h-6 !px-2 !text-2xs text-default-500 hover:text-destructive"
+                      title={`ลบ asset ที่ไม่ได้ใช้แล้ว (${orphans.length} ไฟล์)`}
+                      onClick={async () => {
+                        if (!courseId) return;
+                        if (!confirm(`ลบ ${orphans.length} asset ที่ไม่มี block อ้างถึง?\n\n${orphans.slice(0, 8).join("\n")}${orphans.length > 8 ? `\n…และอีก ${orphans.length - 8}` : ""}`)) return;
+                        await purgeOrphanCourseAssets(courseId, course);
+                        // Reload assets state from latest DB-truth
+                        const next = new Map(assets);
+                        for (const o of orphans) next.delete(o);
+                        await handleAssetsChange(next);
+                      }}
+                    >
+                      ล้าง orphan ({orphans.length})
+                    </Button>
+                  );
+                })()}
               </CardHeader>
               <CardContent className="min-h-0 flex-1 overflow-auto p-3">
                 <AssetUploader assets={assets} onChange={handleAssetsChange} />
