@@ -182,7 +182,7 @@ function Inner() {
 
   const handleImport = () => {
     if (chapters.length === 0) return;
-    sessionStorage.setItem("olx-builder:md-import", JSON.stringify(chapters));
+    sessionStorage.setItem("u-coursebuilder:md-import", JSON.stringify(chapters));
     router.push(editorHref);
   };
 

@@ -1,4 +1,4 @@
-# OLX Course Builder
+# U-CourseBuilder
 
 Browser-based authoring suite for [Open edX](https://openedx.org) **courses** and **Content Libraries** (v1 + v2). Multi-record IndexedDB storage, round-trip import/export to Studio-ready bundles, full feature parity with Studio's Common Problem types — works offline, ships as a web app or signed Mac/Win desktop bundle.
 

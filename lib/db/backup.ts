@@ -64,7 +64,7 @@ export async function exportAllAsJson(): Promise<Blob> {
 
 export async function downloadBackup(): Promise<void> {
   const blob = await exportAllAsJson();
-  downloadBlob(blob, `olx-builder-backup-${new Date().toISOString().slice(0, 10)}.json`);
+  downloadBlob(blob, `u-coursebuilder-backup-${new Date().toISOString().slice(0, 10)}.json`);
 }
 
 // Restore courses + assets. Always creates new IDs to avoid clobbering existing courses.

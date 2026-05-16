@@ -1,4 +1,4 @@
-# Product Requirements — OLX Course Builder
+# Product Requirements — U-CourseBuilder
 
 ## 1. Vision
 เครื่องมือเว็บ (single-page) สำหรับนักออกแบบหลักสูตร / ครู / ทีม content ที่ต้องการสร้างคอร์สบน Open edX โดยไม่ต้องสร้างทีละ unit ใน Studio — ใช้ JSON เป็น source of truth, แก้ผ่าน UI, แล้ว export เป็น `.tar.gz` (OLX bundle) ที่ import กลับเข้า Studio ได้ทันที (Tools → Import)
@@ -37,7 +37,7 @@
 ### 3.3 Persistence
 | ระดับ | Trigger | ปลายทาง |
 |---|---|---|
-| Auto-save | ทุกการแก้ (debounce 500ms) | localStorage `olx-builder:course:v1` |
+| Auto-save | ทุกการแก้ (debounce 500ms) | localStorage `u-coursebuilder:course:v1` |
 | Linked file (Save As) | คลิก Save / ลิงก์แล้ว auto-write | ไฟล์ .json บน disk ผ่าน File System Access API |
 | Download JSON | ปุ่ม Save (browser ที่ไม่รองรับ FSA) | ดาวน์โหลด `.json` |
 | Reset | ปุ่ม Reset | ล้าง localStorage + โหลด sample |

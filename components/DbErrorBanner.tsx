@@ -19,7 +19,7 @@ export function DbErrorBanner({ error }: { error: string }) {
       alert(
         `Reset ล้มเหลว: ${msg}\n\n` +
         `ทางออก: ปิดทุก tab/window ของแอปนี้ก่อน แล้วลองอีกครั้ง\n` +
-        `หรือเปิด DevTools → Application → IndexedDB → คลิกขวาที่ "olx-builder" → Delete database`,
+        `หรือเปิด DevTools → Application → IndexedDB → คลิกขวาที่ "u-coursebuilder" → Delete database`,
       );
       setResetting(false);
     }
@@ -37,7 +37,7 @@ export function DbErrorBanner({ error }: { error: string }) {
             <ol className="ml-4 list-decimal space-y-0.5">
               <li>ปิด tab/window อื่นของแอปนี้ทั้งหมด (รวม Electron app ถ้ามี) แล้วกด Reload</li>
               <li>ยังไม่หาย? กด &quot;รีเซ็ตฐานข้อมูล&quot; (ลบทั้งหมด)</li>
-              <li>Reset ก็ยังไม่ได้? เปิด DevTools (F12) → Application → IndexedDB → คลิกขวาที่ <code className="rounded bg-default-100 px-1">olx-builder</code> → Delete database</li>
+              <li>Reset ก็ยังไม่ได้? เปิด DevTools (F12) → Application → IndexedDB → คลิกขวาที่ <code className="rounded bg-default-100 px-1">u-coursebuilder</code> → Delete database</li>
             </ol>
           </div>
           <div className="flex flex-wrap gap-2 pt-1">

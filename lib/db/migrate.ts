@@ -4,7 +4,7 @@ import { courseSchema } from "../schema";
 import { createCourse } from "./courses";
 import { getMeta, setMeta } from "./index";
 
-const LEGACY_KEY = "olx-builder:course:v1";
+const LEGACY_KEY = "u-coursebuilder:course:v1";
 
 // One-time migration: if the user had a single course in localStorage from the
 // pre-multi-course release, import it into the DB as their first course.

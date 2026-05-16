@@ -134,17 +134,17 @@ function safeEmail(s: string | undefined): string {
   if (trimmed && VALID_EMAIL.test(trimmed)) return trimmed;
   // .invalid is the IANA-reserved TLD for "guaranteed not to exist" — passes
   // RFC 5322 / Django EmailField but won't collide with a real address.
-  return "olx-builder@example.invalid";
+  return "u-coursebuilder@example.invalid";
 }
 
 function buildPackageToml(lib: Library): string {
   const obj = {
     meta: {
       format_version: lib.meta.formatVersion,
-      created_by: nonBlank(lib.meta.createdBy, "olx-builder"),
+      created_by: nonBlank(lib.meta.createdBy, "u-coursebuilder"),
       created_by_email: safeEmail(lib.meta.createdByEmail),
       created_at: lib.meta.createdAt ?? isoNow(),
-      origin_server: nonBlank(lib.meta.originServer, "olx-builder.local"),
+      origin_server: nonBlank(lib.meta.originServer, "u-coursebuilder.local"),
     },
     learning_package: {
       title: lib.learningPackage.title,

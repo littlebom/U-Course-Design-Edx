@@ -65,7 +65,7 @@ export function LibraryInfoDialog({ open, library, onChange, onClose }: Props) {
                 <Input
                   value={library.meta.createdBy}
                   onChange={(e) => onChange((l) => { l.meta.createdBy = e.target.value; })}
-                  placeholder="olx-builder"
+                  placeholder="u-coursebuilder"
                 />
               </div>
               <div className="space-y-1.5">
@@ -74,7 +74,7 @@ export function LibraryInfoDialog({ open, library, onChange, onClose }: Props) {
                   type="email"
                   value={library.meta.createdByEmail}
                   onChange={(e) => onChange((l) => { l.meta.createdByEmail = e.target.value; })}
-                  placeholder="olx-builder@local"
+                  placeholder="u-coursebuilder@example.invalid"
                 />
               </div>
               <div className="space-y-1.5 col-span-2">
@@ -84,7 +84,7 @@ export function LibraryInfoDialog({ open, library, onChange, onClose }: Props) {
                   onChange={(e) => onChange((l) => { l.meta.originServer = e.target.value; })}
                   placeholder="studio.example.com"
                 />
-                <p className="text-xs text-default-400">URL ของ Studio ที่ใช้สร้าง — ถ้าว่างจะใช้ <code>olx-builder.local</code> ตอน export</p>
+                <p className="text-xs text-default-400">URL ของ Studio ที่ใช้สร้าง — ถ้าว่างจะใช้ <code>u-coursebuilder.local</code> ตอน export</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs text-default-500">

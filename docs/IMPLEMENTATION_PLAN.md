@@ -13,11 +13,11 @@ node -v                              # v22.x
 ## Phase 0 — Scaffold
 
 ```bash
-npx create-next-app@latest course-olx-builder \
+npx create-next-app@latest u-coursebuilder \
   --ts --tailwind --app --eslint \
   --src-dir=false --import-alias="@/*" \
   --use-npm --turbopack --no-git --yes
-cd course-olx-builder
+cd u-coursebuilder
 ```
 
 **Verify:** `npm run dev` → http://localhost:3000 default page renders.
@@ -194,7 +194,7 @@ cp -R node_modules/tinymce/{tinymce.min.js,plugins,themes,skins,icons,models} pu
 ## Phase 5 — UX Polish
 
 ### 5.1 Sidebar collapse
-- `sidebarOpen` state + localStorage `olx-builder:sidebar`
+- `sidebarOpen` state + localStorage `u-coursebuilder:sidebar`
 - Toggle icon (PanelRightClose / PanelRightOpen) in header
 - Grid columns adapt: `grid-cols-12` → `grid-cols-9` when collapsed
 - Conditional render of `<aside>`

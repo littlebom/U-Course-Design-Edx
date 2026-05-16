@@ -5,7 +5,7 @@ import type { CourseRecord, AssetRecord, MetaKey } from "./types";
 import type { LibraryRecord } from "./libraries";
 import type { LibraryAssetRecord } from "./library-assets";
 
-interface OlxBuilderDB extends DBSchema {
+interface UCourseBuilderDB extends DBSchema {
   courses: {
     key: string;
     value: CourseRecord;
@@ -32,10 +32,10 @@ interface OlxBuilderDB extends DBSchema {
   };
 }
 
-const DB_NAME = "olx-builder";
+const DB_NAME = "u-coursebuilder";
 const DB_VERSION = 2;
 
-let dbPromise: Promise<IDBPDatabase<OlxBuilderDB>> | null = null;
+let dbPromise: Promise<IDBPDatabase<UCourseBuilderDB>> | null = null;
 
 // Wraps openDB so a stuck upgrade (other tab holding old version) doesn't hang the UI forever.
 function withTimeout<T>(p: Promise<T>, ms: number, hint: string): Promise<T> {
@@ -59,7 +59,7 @@ export async function deleteEntireDb(): Promise<void> {
   });
 }
 
-export function getDb(): Promise<IDBPDatabase<OlxBuilderDB>> {
+export function getDb(): Promise<IDBPDatabase<UCourseBuilderDB>> {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("IndexedDB not available (SSR)"));
   }
@@ -72,7 +72,7 @@ export function getDb(): Promise<IDBPDatabase<OlxBuilderDB>> {
       };
     }
     console.info("[db] opening", DB_NAME, "v" + DB_VERSION);
-    dbPromise = withTimeout(openDB<OlxBuilderDB>(DB_NAME, DB_VERSION, {
+    dbPromise = withTimeout(openDB<UCourseBuilderDB>(DB_NAME, DB_VERSION, {
       upgrade(db, oldVersion, newVersion) {
         console.info("[db] upgrade", oldVersion, "→", newVersion);
         if (oldVersion < 1) {

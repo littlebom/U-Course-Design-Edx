@@ -16,7 +16,7 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OLX Course Builder",
+  title: "U-CourseBuilder",
   description: "Author Open edX courses and Content Libraries (v1/v2) in the browser. Imports OLX tar.gz / Library v2 zip / Markdown outlines; exports Studio-ready bundles for Ulmo and beyond.",
 };
 

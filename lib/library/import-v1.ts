@@ -116,7 +116,7 @@ export async function parseLibraryV1Tar(
   const raw = {
     meta: {
       formatVersion: 1,
-      createdBy: "library-v1-importer",
+      createdBy: "u-coursebuilder (v1 import)",
       createdByEmail: "",
       createdAt: new Date().toISOString(),
       originServer: "",

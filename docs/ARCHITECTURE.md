@@ -18,7 +18,7 @@
 
 ## Directory Layout
 ```
-course-olx-builder/
+u-coursebuilder/
   app/
     layout.tsx                    # Sarabun font + html lang="th"
     page.tsx                      # Main 3-pane UI (client component)
@@ -149,7 +149,7 @@ Builder.buildOlxFiles iterates:
 
 ## Persistence Layers
 1. **localStorage** (`lib/persist.ts`)
-   - Key: `olx-builder:course:v1`
+   - Key: `u-coursebuilder:course:v1`
    - Trigger: useEffect debounced 500ms after every `course` change
    - Validation: Zod parse on load — invalid data → ignore (start fresh)
 2. **File System Access API** (`lib/fileHandle.ts`)
@@ -158,7 +158,7 @@ Builder.buildOlxFiles iterates:
    - `writeHandle(handle, course)` → `createWritable` → write JSON
    - Linked file gets auto-write on every change (debounced 1s)
    - Browser support: Chrome/Edge/Brave/Opera; fallback = `downloadCourseJson()`
-3. **Sidebar state** (`localStorage olx-builder:sidebar`)
+3. **Sidebar state** (`localStorage u-coursebuilder:sidebar`)
 
 ## Critical Implementation Details
 

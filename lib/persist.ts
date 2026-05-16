@@ -1,7 +1,7 @@
 import type { Course } from "./schema";
 import { courseSchema } from "./schema";
 
-const KEY = "olx-builder:course:v1";
+const KEY = "u-coursebuilder:course:v1";
 
 export function loadFromStorage(): Course | null {
   if (typeof window === "undefined") return null;

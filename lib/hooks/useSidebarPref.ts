@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const KEY = "olx-builder:sidebar";
+const KEY = "u-coursebuilder:sidebar";
 
 // Persistent sidebar open/closed boolean. Defaults to open. Reads localStorage
 // once on mount (so SSR-renders match) and writes back on every change.

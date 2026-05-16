@@ -1,5 +1,5 @@
-appId: ac.thaimooc.olxbuilder
-productName: OLX Course Builder
+appId: ac.thaimooc.ucoursebuilder
+productName: U-CourseBuilder
 copyright: © 2026 ThaiMOOC
 
 directories:
@@ -42,7 +42,7 @@ nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   perMachine: false
-  shortcutName: OLX Course Builder
+  shortcutName: U-CourseBuilder
 
 linux:
   target:

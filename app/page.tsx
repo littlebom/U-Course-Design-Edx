@@ -124,9 +124,9 @@ function PageInner() {
         await setMeta("currentCourseId", courseId);
 
         // Accept structure from markdown import page (session-passed)
-        const mdRaw = sessionStorage.getItem("olx-builder:md-import");
+        const mdRaw = sessionStorage.getItem("u-coursebuilder:md-import");
         if (mdRaw) {
-          sessionStorage.removeItem("olx-builder:md-import");
+          sessionStorage.removeItem("u-coursebuilder:md-import");
           try {
             const chapters = JSON.parse(mdRaw);
             setCourse((prev) => ({ ...prev, chapters: [...prev.chapters, ...chapters] }));
