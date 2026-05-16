@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Race-safe asset CRUD pattern shared by course and library editors.
 //
@@ -11,8 +11,11 @@ import { useCallback, useRef, useState } from "react";
 //   - chainRef:  serialises async writes so a put and delete for the same
 //                key can't interleave
 //
-// Generic over the value type V — caller decides what to store. The diff
-// is computed via the `compare` callback (typically reference equality).
+// The returned `hydrate` and `apply` callbacks must be REFERENCE-STABLE
+// across renders so callers can put them in useEffect deps without
+// triggering re-runs every render. We achieve this by stashing the options
+// object in a ref that we update each render — the callback reads from the
+// ref rather than from a closure dep.
 export interface UseAssetSyncOptions<V> {
   // Called for entries that are new or whose value changed
   onPut: (key: string, value: V) => Promise<void>;
@@ -38,7 +41,14 @@ export function useAssetSync<V>(opts: UseAssetSyncOptions<V>): UseAssetSyncResul
   const latestRef = useRef<Map<string, V>>(new Map());
   const chainRef = useRef<Promise<void>>(Promise.resolve());
 
-  const cmp = opts.compare ?? ((a: V, b: V) => a === b);
+  // Stable holder for the (possibly-inlined) options object. Updated each
+  // render so callbacks always see the latest closures without becoming
+  // unstable themselves.
+  const optsRef = useRef(opts);
+  useEffect(() => {
+    /* eslint-disable-next-line react-hooks/immutability */
+    optsRef.current = opts;
+  });
 
   const hydrate = useCallback((next: Map<string, V>) => {
     setAssets(next);
@@ -49,24 +59,26 @@ export function useAssetSync<V>(opts: UseAssetSyncOptions<V>): UseAssetSyncResul
   const apply = useCallback((next: Map<string, V>): Promise<void> => {
     setAssets(next);
     const run = async () => {
+      const o = optsRef.current;
+      const cmp = o.compare ?? ((a: V, b: V) => a === b);
       const prev = latestRef.current;
       /* eslint-disable-next-line react-hooks/immutability */
       latestRef.current = next;
       for (const [k, v] of next) {
         const old = prev.get(k);
-        if (old === undefined || !cmp(old, v)) await opts.onPut(k, v);
+        if (old === undefined || !cmp(old, v)) await o.onPut(k, v);
       }
       for (const k of prev.keys()) {
-        if (!next.has(k)) await opts.onDelete(k);
+        if (!next.has(k)) await o.onDelete(k);
       }
     };
     const chained = chainRef.current.then(run, run);
     /* eslint-disable-next-line react-hooks/immutability */
     chainRef.current = chained.catch((e) => {
-      opts.onError?.(e);
+      optsRef.current.onError?.(e);
     });
     return chained;
-  }, [opts, cmp]);
+  }, []);
 
   return { assets, setAssets, hydrate, apply };
 }

@@ -51,6 +51,8 @@ export default function LibraryEditorPage() {
     onError: (e) => setErr(e instanceof Error ? e.message : String(e)),
   });
   const assets = assetSync.assets;
+  const hydrateAssets = assetSync.hydrate;
+  const applyAssets = assetSync.apply;
 
   // Adapter: AssetUploader gives us AssetFile, but new uploads should be routed
   // under "shared/<filename>" so they don't collide with per-xblock keys.
@@ -63,9 +65,9 @@ export default function LibraryEditorPage() {
         const file = af.blob instanceof File ? af.blob : new File([af.blob], cleanName);
         fileMap.set(targetKey, file);
       }
-      await assetSync.apply(fileMap);
+      await applyAssets(fileMap);
     },
-    [assetSync],
+    [applyAssets],
   );
 
   const assetFileView = useMemo(
@@ -85,14 +87,14 @@ export default function LibraryEditorPage() {
         if (!rec) { router.replace("/libraries"); return; }
         if (cancelled) return;
         setLibrary(rec.library);
-        assetSync.hydrate(await libraryService.loadAssetsAsMap(libraryId));
+        hydrateAssets(await libraryService.loadAssetsAsMap(libraryId));
         setHydrated(true);
       } catch (e) {
         setErr(e instanceof Error ? e.message : String(e));
       }
     })();
     return () => { cancelled = true; };
-  }, [libraryId, router, assetSync]);
+  }, [libraryId, router, hydrateAssets]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const { status: saveStatus, savedAt } = useDebouncedAutosave(

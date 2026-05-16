@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -13,6 +13,9 @@ export interface UseDebouncedAutosaveResult {
 
 // Debounces a save() callback by `delayMs` whenever `value` changes after
 // the `enabled` flag flips on. Tracks status + savedAt for the UI indicator.
+//
+// The `save` callback is stored in a ref so callers can pass inline arrow
+// functions without re-triggering the effect every render.
 export function useDebouncedAutosave<T>(
   value: T,
   enabled: boolean,
@@ -22,12 +25,18 @@ export function useDebouncedAutosave<T>(
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [savedAt, setSavedAt] = useState<number | null>(null);
 
+  const saveRef = useRef(save);
+  useEffect(() => {
+    /* eslint-disable-next-line react-hooks/immutability */
+    saveRef.current = save;
+  });
+
   useEffect(() => {
     if (!enabled) return;
     const t = setTimeout(async () => {
       setStatus("saving");
       try {
-        await save(value);
+        await saveRef.current(value);
         setStatus("saved");
         setSavedAt(Date.now());
       } catch {
@@ -35,7 +44,7 @@ export function useDebouncedAutosave<T>(
       }
     }, delayMs);
     return () => clearTimeout(t);
-  }, [value, enabled, delayMs, save]);
+  }, [value, enabled, delayMs]);
 
   return {
     status,

@@ -98,6 +98,7 @@ function PageInner() {
   });
   const assets = assetSync.assets;
   const handleAssetsChange = assetSync.apply;
+  const hydrateAssets = assetSync.hydrate;
 
   // ── Load course + assets from DB on mount / courseId change ────────────
   useEffect(() => {
@@ -119,7 +120,7 @@ function PageInner() {
         const assetMap = new Map<string, AssetFile>();
         for (const [name, file] of map)
           assetMap.set(name, { name, size: file.size, blob: file });
-        assetSync.hydrate(assetMap);
+        hydrateAssets(assetMap);
         await setMeta("currentCourseId", courseId);
 
         // Accept structure from markdown import page (session-passed)
@@ -137,7 +138,7 @@ function PageInner() {
       }
     })();
     return () => { cancelled = true; };
-  }, [courseId, router, assetSync]);
+  }, [courseId, router, hydrateAssets]);
 
   // ── Debounced save course → DB ─────────────────────────────────────────
   const { status: saveStatus, savedAt } = useDebouncedAutosave(
