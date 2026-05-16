@@ -3,6 +3,8 @@ import { z } from "zod";
 export const choiceSchema = z.object({
   text: z.string().min(1),
   correct: z.boolean(),
+  // Per-choice feedback (<choicehint> in OLX) — shown after the learner picks this option
+  hint: z.string().optional(),
 });
 
 // Five Open edX "common problem" types — choice-based (3) + answer-based (2).
@@ -34,6 +36,15 @@ export const problemBlockSchema = z.object({
     .enum(["always", "answered", "attempted", "closed", "finished", "past_due", "correct_or_past_due", "never"])
     .optional(),
   explanation: z.string().optional(),
+  // ── Feature parity with Studio "Common Problems" ───────────────────────
+  // Scoring weight — applied at problem level (default 1.0 in OLX)
+  weight: z.number().nonnegative().optional(),
+  // Shuffle choices each load (applies to multiplechoice / checkbox only)
+  shuffle: z.boolean().optional(),
+  // Demand hints — learner clicks "Hint" button to reveal sequentially
+  demandHints: z.array(z.string()).optional(),
+  // Partial credit (multi-select only): "EDC" = Every Decision Counts, "halves" = half-credit
+  partialCredit: z.enum(["EDC", "halves"]).optional(),
 });
 
 export const htmlBlockSchema = z.object({

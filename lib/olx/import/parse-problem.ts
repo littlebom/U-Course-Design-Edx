@@ -18,6 +18,12 @@ export function parseProblemFile(
   const explanation = solutionEl?.textContent?.trim() || undefined;
   const maxAttemptsRaw = el.getAttribute("max_attempts");
   const showAnswerRaw = el.getAttribute("showanswer");
+  const weightRaw = el.getAttribute("weight");
+
+  // Demand hints: <demandhint><hint>...</hint>…</demandhint>
+  const demandHints = Array.from(el.querySelectorAll("demandhint > hint"))
+    .map((h) => h.textContent?.trim() ?? "")
+    .filter(Boolean);
 
   const common = {
     type: "problem" as const,
@@ -26,6 +32,8 @@ export function parseProblemFile(
     ...(maxAttemptsRaw ? { maxAttempts: Number(maxAttemptsRaw) } : {}),
     ...(showAnswerRaw ? { showAnswer: showAnswerRaw } : {}),
     ...(explanation ? { explanation } : {}),
+    ...(weightRaw && !Number.isNaN(Number(weightRaw)) ? { weight: Number(weightRaw) } : {}),
+    ...(demandHints.length > 0 ? { demandHints } : {}),
   };
 
   // ── Numerical ────────────────────────────────────────────────────────────
@@ -58,22 +66,30 @@ export function parseProblemFile(
   }
 
   // ── Choice-based (multiplechoice / checkbox / dropdown) ──────────────────
-  let choices: { text: string; correct: boolean }[] = [];
+  let choices: { text: string; correct: boolean; hint?: string }[] = [];
   if (isDropdown) {
     // Multi-part problems may have several <optionresponse> blocks — use only the first
     const firstOptInput = el.querySelector("optioninput");
     const optionEls = firstOptInput?.querySelectorAll("option") ?? [];
     choices = Array.from(optionEls).map((o) => ({
-      text: o.textContent?.trim() ?? "",
+      text: (o.textContent?.replace(/\s+/g, " ") ?? "").trim(),
       correct: o.getAttribute("correct")?.toLowerCase() === "true",
     }));
   } else {
     const choiceEls = el.querySelectorAll("choicegroup > choice, checkboxgroup > choice");
     choices = Array.from(choiceEls).map((c) => {
       const correct = c.getAttribute("correct") === "true";
-      const divEl = c.querySelector("div, p");
-      const text = (divEl?.textContent ?? c.textContent ?? "").trim();
-      return { text, correct };
+      // Per-choice hint: <choicehint>…</choicehint> nested in <choice>
+      const hintEl = c.querySelector(":scope > choicehint");
+      const hint = hintEl?.textContent?.trim() || undefined;
+      // Choice text = textContent minus the hint subtree
+      const textParts: string[] = [];
+      for (const node of Array.from(c.childNodes)) {
+        if (node.nodeType === 1 && (node as Element).tagName === "choicehint") continue;
+        textParts.push(node.textContent ?? "");
+      }
+      const text = textParts.join("").trim().replace(/\s+/g, " ");
+      return { text, correct, ...(hint ? { hint } : {}) };
     });
   }
 
@@ -85,6 +101,19 @@ export function parseProblemFile(
   }
   if (!choices.some((c) => c.correct)) choices[0].correct = true;
 
+  // Group-level attributes: shuffle (choicegroup/checkboxgroup), partial_credit (choiceresponse)
+  const group = el.querySelector("choicegroup, checkboxgroup");
+  const shuffle = group?.getAttribute("shuffle") === "true";
+  const cr = el.querySelector("choiceresponse");
+  const partialCreditRaw = cr?.getAttribute("partial_credit");
+  const partialCredit = partialCreditRaw === "EDC" || partialCreditRaw === "halves" ? partialCreditRaw : undefined;
+
   const problemType = isDropdown ? "dropdown" : isCheckbox ? "checkbox" : "multiplechoice";
-  return { ...common, problemType, choices };
+  return {
+    ...common,
+    problemType,
+    choices,
+    ...(shuffle ? { shuffle: true } : {}),
+    ...(partialCredit ? { partialCredit } : {}),
+  };
 }

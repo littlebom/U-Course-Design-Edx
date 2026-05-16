@@ -42,29 +42,42 @@ export function buildProblemBlock(block: ProblemBlock): string {
     max_attempts: String(block.maxAttempts ?? 1),
     showanswer: block.showAnswer ?? "closed",
   };
+  if (block.weight != null) attrs.weight = String(block.weight);
   const md = toMarkdown(block);
   if (md) attrs.markdown = md;
   const root = create({ version: "1.0" }).ele("problem", attrs);
 
   const choices = block.choices ?? [];
 
+  // Helper: append a <choice> with optional <choicehint>
+  const appendChoice = (
+    parent: ReturnType<typeof root.ele>,
+    c: { text: string; correct: boolean; hint?: string },
+    correctVal: "true" | "false" | "True" | "False",
+  ) => {
+    const el = parent.ele("choice", { correct: correctVal }).txt(c.text);
+    if (c.hint) el.ele("choicehint").txt(c.hint);
+  };
+
   switch (block.problemType) {
     case "multiplechoice": {
       const r = root.ele("multiplechoiceresponse");
       r.ele("p").txt(stripTags(block.question));
-      const g = r.ele("choicegroup", { type: "MultipleChoice" });
-      for (const c of choices) {
-        g.ele("choice", { correct: c.correct ? "true" : "false" }).txt(c.text);
-      }
+      const groupAttrs: Record<string, string> = { type: "MultipleChoice" };
+      if (block.shuffle) groupAttrs.shuffle = "true";
+      const g = r.ele("choicegroup", groupAttrs);
+      for (const c of choices) appendChoice(g, c, c.correct ? "true" : "false");
       break;
     }
     case "checkbox": {
-      const r = root.ele("choiceresponse");
+      const crAttrs: Record<string, string> = {};
+      if (block.partialCredit) crAttrs.partial_credit = block.partialCredit;
+      const r = root.ele("choiceresponse", crAttrs);
       r.ele("p").txt(stripTags(block.question));
-      const g = r.ele("checkboxgroup");
-      for (const c of choices) {
-        g.ele("choice", { correct: c.correct ? "true" : "false" }).txt(c.text);
-      }
+      const groupAttrs: Record<string, string> = {};
+      if (block.shuffle) groupAttrs.shuffle = "true";
+      const g = r.ele("checkboxgroup", groupAttrs);
+      for (const c of choices) appendChoice(g, c, c.correct ? "true" : "false");
       break;
     }
     case "dropdown": {
@@ -115,6 +128,13 @@ export function buildProblemBlock(block: ProblemBlock): string {
 
   if (block.explanation) {
     root.ele("solution").ele("div", { class: "detailed-solution" }).txt(block.explanation);
+  }
+
+  if (block.demandHints && block.demandHints.length > 0) {
+    const dh = root.ele("demandhint");
+    for (const h of block.demandHints) {
+      if (h.trim()) dh.ele("hint").txt(h);
+    }
   }
 
   return root.end({ prettyPrint: true, headless: true });
