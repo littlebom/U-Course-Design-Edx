@@ -165,11 +165,13 @@ function PageInner() {
   const handleAssetsChange = useCallback((next: Map<string, AssetFile>): Promise<void> => {
     setAssets(next);
     if (!courseId) {
+      /* eslint-disable-next-line react-hooks/immutability */
       latestAssetsRef.current = next;
       return Promise.resolve();
     }
     const run = async () => {
       const prev = latestAssetsRef.current;
+      /* eslint-disable-next-line react-hooks/immutability */
       latestAssetsRef.current = next;
       // Added or changed → write
       for (const [name, af] of next) {
