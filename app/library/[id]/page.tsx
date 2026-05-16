@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Library as LibIcon, Download, Plus, Trash2, FolderTree, Info } from "lucide-react";
+import { Library as LibIcon, Download, Plus, Trash2, FolderTree, Info, ChevronDown, FileText, HelpCircle } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { SaveIndicator } from "@/components/SaveIndicator";
 import { LibraryInfoDialog } from "@/components/LibraryInfoDialog";
 import { BlockEditor } from "@/components/BlockEditor";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Block, Course } from "@/lib/schema";
 import type {
   Library,
@@ -328,23 +332,43 @@ function EntityRow({
 
 function AddEntityMenu({ onAdd }: { onAdd: (kind: string) => void }) {
   return (
-    <div className="flex items-center gap-1">
-      <Button variant="ghost" size="sm" onClick={() => onAdd("section")} title="Section">
-        <Plus size={12} /> Section
-      </Button>
-      <Button variant="ghost" size="sm" onClick={() => onAdd("subsection")} title="Subsection">
-        <Plus size={12} /> Subsection
-      </Button>
-      <Button variant="ghost" size="sm" onClick={() => onAdd("unit")} title="Unit">
-        <Plus size={12} /> Unit
-      </Button>
-      <Button variant="outline" size="sm" onClick={() => onAdd("xblock-problem")} title="เพิ่ม Problem">
-        <Plus size={12} /> Problem
-      </Button>
-      <Button variant="outline" size="sm" onClick={() => onAdd("xblock-html")} title="เพิ่ม HTML">
-        <Plus size={12} /> HTML
-      </Button>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button color="primary" size="sm">
+          <Plus size={12} className="me-1" /> เพิ่ม
+          <ChevronDown size={11} className="ms-1 opacity-60" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-default-400">
+          Container
+        </DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => onAdd("section")}>
+          <span className="me-2 grid size-4 place-items-center rounded bg-primary text-[10px] font-semibold uppercase text-primary-foreground">S</span>
+          Section
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onAdd("subsection")}>
+          <span className="me-2 grid size-4 place-items-center rounded bg-info text-[10px] font-semibold uppercase text-white">S</span>
+          Subsection
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onAdd("unit")}>
+          <span className="me-2 grid size-4 place-items-center rounded bg-success text-[10px] font-semibold uppercase text-white">U</span>
+          Unit
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-default-400">
+          XBlock
+        </DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => onAdd("xblock-problem")}>
+          <HelpCircle size={13} className="me-2 text-warning" /> Problem
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onAdd("xblock-html")}>
+          <FileText size={13} className="me-2 text-default-500" /> HTML
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
