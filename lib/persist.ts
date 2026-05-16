@@ -30,12 +30,8 @@ export function clearStorage(): void {
   localStorage.removeItem(KEY);
 }
 
+import { downloadJson } from "./download";
+
 export function downloadCourseJson(course: Course): void {
-  const blob = new Blob([JSON.stringify(course, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${course.course.courseCode}-${course.course.run}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadJson(course, `${course.course.courseCode}-${course.course.run}.json`);
 }

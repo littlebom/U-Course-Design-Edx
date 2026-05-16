@@ -17,6 +17,7 @@ import { courseSchema } from "@/lib/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DbErrorBanner } from "@/components/DbErrorBanner";
+import { downloadJson, downloadStatic } from "@/lib/download";
 import { cn } from "@/lib/utils";
 
 export default function CoursesPage() {
@@ -59,10 +60,7 @@ export default function CoursesPage() {
 
   const handleDownloadTemplates = () => {
     for (const path of ["/template.xml", "/problems-learning-design.xml"]) {
-      const a = document.createElement("a");
-      a.href = path;
-      a.download = path.slice(1);
-      a.click();
+      downloadStatic(path);
     }
   };
 
@@ -200,15 +198,7 @@ export default function CoursesPage() {
                     refresh();
                   }
                 }}
-                onExport={() => {
-                  const blob = new Blob([JSON.stringify(c.course, null, 2)], { type: "application/json" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `${c.course.course.courseCode}-${c.course.course.run}.json`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }}
+                onExport={() => downloadJson(c.course, `${c.course.course.courseCode}-${c.course.course.run}.json`)}
               />
             ))}
           </div>

@@ -4,6 +4,7 @@ import type { Course } from "../schema";
 import { courseSchema } from "../schema";
 import { createCourse, listCourses } from "./courses";
 import { listAssets, putAsset } from "./assets";
+import { downloadBlob } from "../download";
 
 interface AssetBackup {
   fileName: string;
@@ -63,12 +64,7 @@ export async function exportAllAsJson(): Promise<Blob> {
 
 export async function downloadBackup(): Promise<void> {
   const blob = await exportAllAsJson();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `olx-builder-backup-${new Date().toISOString().slice(0, 10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, `olx-builder-backup-${new Date().toISOString().slice(0, 10)}.json`);
 }
 
 // Restore courses + assets. Always creates new IDs to avoid clobbering existing courses.

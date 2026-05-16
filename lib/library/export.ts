@@ -18,6 +18,7 @@ import {
   type LibraryEntity,
 } from "./schema";
 import type { Block } from "../schema";
+import { downloadBlob } from "../download";
 
 export interface LibraryExportWarnings {
   warnings: string[];
@@ -242,12 +243,7 @@ export async function buildLibraryZipAsync(
 export async function downloadLibraryZip(library: Library, assets?: Map<string, File>): Promise<string[]> {
   const { bytes, warnings } = await buildLibraryZipAsync({ library, assets });
   const blob = new Blob([new Uint8Array(bytes).buffer], { type: "application/zip" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
   const slug = library.learningPackage.key.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-  a.href = url;
-  a.download = `${slug}-${new Date().toISOString().slice(0, 10)}.zip`;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, `${slug}-${new Date().toISOString().slice(0, 10)}.zip`);
   return warnings;
 }

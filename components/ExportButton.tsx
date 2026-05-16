@@ -5,6 +5,7 @@ import { Download, Loader2 } from "lucide-react";
 import type { Course } from "@/lib/schema";
 import type { AssetFile } from "./AssetUploader";
 import { Button } from "@/components/ui/button";
+import { downloadBlob } from "@/lib/download";
 
 type Props = {
   course: Course;
@@ -34,12 +35,7 @@ export function ExportButton({ course, assets, disabled }: Props) {
         );
       }
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${course.course.courseCode}-${course.course.run}.tar.gz`;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, `${course.course.courseCode}-${course.course.run}.tar.gz`);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
