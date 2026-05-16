@@ -4,8 +4,10 @@ import type { Library } from "../library/schema";
 import { librarySchema } from "../library/schema";
 import { getDb } from "./index";
 
+import { uuidV4 } from "../uuid";
+
 function genId(): string {
-  return globalThis.crypto?.randomUUID?.() ?? `l_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  return uuidV4();
 }
 
 export interface LibraryRecord {

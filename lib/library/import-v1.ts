@@ -1,7 +1,7 @@
 "use client";
 
 import { extractTar, getXml, attr } from "../olx/import/tar";
-import { parseBlockFile } from "../olx/import/parse-block";
+import { walkFlatBlocks } from "../olx/import/walk-flat-blocks";
 import {
   librarySchema,
   type Library,
@@ -54,25 +54,12 @@ export async function parseLibraryV1Tar(
   const v2Key = `lib:${org}:${library}`;
 
   // ── Walk children of <library> (flat: <problem url_name>, <html url_name>, …) ─
-  const xblocks: LibraryXBlock[] = [];
-  let skipped = 0;
-  for (const child of Array.from(libEl.children)) {
-    // Strip ns0:name, ns1:giturl, ns8:advanced_modules etc. — keep only known block tags
-    const tag = child.tagName;
-    if (tag.includes(":")) continue; // namespaced option elements
-    const urlName = attr(child, "url_name");
-    if (!urlName) continue;
-
-    // parseBlockFile expects path "<tag>/<url>.xml" — that matches Library v1's layout
-    const parsed = parseBlockFile(tag, urlName, files, warnings);
-    if (!parsed) {
-      skipped++;
-      continue;
-    }
+  // Re-uses the same flat walker the v2 importer would use.
+  const parsedBlocks = walkFlatBlocks(libEl, files, warnings);
+  const xblocks: LibraryXBlock[] = parsedBlocks.map(({ tag, urlName, block: parsed }) => {
     const block = parsed as Block & { displayName?: string };
-
     const uuid = hexToUuid(urlName);
-    xblocks.push({
+    return {
       kind: "xblock",
       key: `xblock.v1:${tag}:${uuid}`,
       title: block.displayName || tag,
@@ -83,8 +70,13 @@ export async function parseLibraryV1Tar(
       canStandAlone: true,
       created: new Date().toISOString(),
       block,
-    });
-  }
+    };
+  });
+  // Skipped = direct children that had a usable url_name but failed to parse
+  const childCount = Array.from(libEl.children).filter(
+    (c) => !c.tagName.includes(":") && attr(c, "url_name"),
+  ).length;
+  const skipped = childCount - xblocks.length;
 
   // ── Optional wrap: create one Section container holding everything ───────
   const entities: LibraryEntity[] = [...xblocks];

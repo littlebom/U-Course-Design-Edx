@@ -5,8 +5,10 @@ import { courseSchema } from "../schema";
 import { getDb } from "./index";
 import type { CourseRecord } from "./types";
 
+import { uuidV4 } from "../uuid";
+
 function genId(): string {
-  return globalThis.crypto?.randomUUID?.() ?? `c_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  return uuidV4();
 }
 
 function deriveName(course: Course): string {
