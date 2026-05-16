@@ -1,6 +1,6 @@
 "use client";
 
-import { zipSync, strToU8 } from "fflate";
+import { zip, writeText as strToU8 } from "../io/zip";
 import { stringify as stringifyToml } from "smol-toml";
 import { buildHtmlBlock } from "../olx/block-html";
 import { buildProblemBlock } from "../olx/block-problem";
@@ -237,7 +237,7 @@ export async function buildLibraryZipAsync(
     }
   }
 
-  return { bytes: zipSync(files, { level: 6 }), warnings };
+  return { bytes: zip(files, 6), warnings };
 }
 
 export async function downloadLibraryZip(library: Library, assets?: Map<string, File>): Promise<string[]> {

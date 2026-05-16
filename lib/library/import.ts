@@ -1,6 +1,7 @@
 "use client";
 
-import { unzipSync, strFromU8 } from "fflate";
+import { strFromU8 } from "fflate";
+import { unzip } from "../io/zip";
 import { parse as parseToml } from "smol-toml";
 import { parseBlockFile } from "../olx/import/parse-block";
 import {
@@ -29,7 +30,7 @@ export interface LibraryImportResult {
 export async function parseLibraryZip(buffer: ArrayBuffer): Promise<LibraryImportResult> {
   const warnings: string[] = [];
   const assetsOut = new Map<string, File>();
-  const files = unzipSync(new Uint8Array(buffer));
+  const files = unzip(buffer);
 
   // ── package.toml ─────────────────────────────────────────────────────────
   const pkgBuf = files["package.toml"];
