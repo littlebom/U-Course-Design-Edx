@@ -58,15 +58,23 @@ function entityFileSlug(e: LibraryEntity): string {
   return e.key;
 }
 
-// Build the package.toml content as TOML string
+// Build the package.toml content as TOML string.
+// Ulmo's importer rejects empty strings for meta.created_by / created_by_email /
+// origin_server with "This field may not be blank.", so we substitute safe
+// placeholders when the user hasn't provided values. Description is allowed to
+// be blank.
+function nonBlank(s: string | undefined, fallback: string): string {
+  return s && s.trim() ? s : fallback;
+}
+
 function buildPackageToml(lib: Library): string {
   const obj = {
     meta: {
       format_version: lib.meta.formatVersion,
-      created_by: lib.meta.createdBy,
-      created_by_email: lib.meta.createdByEmail,
+      created_by: nonBlank(lib.meta.createdBy, "olx-builder"),
+      created_by_email: nonBlank(lib.meta.createdByEmail, "olx-builder@local"),
       created_at: lib.meta.createdAt ?? isoNow(),
-      origin_server: lib.meta.originServer,
+      origin_server: nonBlank(lib.meta.originServer, "olx-builder.local"),
     },
     learning_package: {
       title: lib.learningPackage.title,
