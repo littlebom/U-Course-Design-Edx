@@ -7,7 +7,12 @@ import { sampleCourse } from "../sample";
 export function emptyCourseSeed(): Course {
   return structuredClone({
     ...sampleCourse,
-    course: { ...sampleCourse.course, displayName: "Untitled course", run: `run-${Date.now()}` },
+    course: {
+      ...sampleCourse.course,
+      displayName: "Welcome to Open Edx",
+      org: "YY",
+      run: `run-${Date.now()}`,
+    },
     chapters: [
       {
         displayName: "Section 1",
