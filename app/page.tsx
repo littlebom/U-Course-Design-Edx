@@ -247,9 +247,6 @@ function PageInner() {
         brand={
           <div className="flex max-w-xs items-center gap-2 truncate text-sm font-medium text-default-700">
             <span className="truncate">{course.course.displayName}</span>
-            <span className="text-xs text-default-400">
-              {course.course.org}/{course.course.courseCode}/{course.course.run}
-            </span>
           </div>
         }
         left={
@@ -304,6 +301,16 @@ function PageInner() {
             <Separator orientation="vertical" className="h-6" />
 
             <ExportButton course={course} assets={assets} disabled={hasErrors} />
+
+            <button
+              type="button"
+              onClick={() => setSidebarOpen((v) => !v)}
+              title={sidebarOpen ? "ซ่อน sidebar" : "แสดง sidebar"}
+              aria-label={sidebarOpen ? "ซ่อน sidebar" : "แสดง sidebar"}
+              className="ml-1 grid h-7 w-7 place-items-center rounded-md bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            >
+              {sidebarOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
+            </button>
           </>
         }
       />
@@ -350,19 +357,10 @@ function PageInner() {
 
       <main
         className={cn(
-          "relative grid flex-1 gap-4 overflow-hidden p-4 transition-[grid-template-columns] duration-200",
+          "grid flex-1 gap-4 overflow-hidden p-4 transition-[grid-template-columns] duration-200",
           sidebarOpen ? "grid-cols-12" : "grid-cols-9",
         )}
       >
-        {/* Sidebar toggle — floating on right edge of main area */}
-        <button
-          type="button"
-          onClick={() => setSidebarOpen((v) => !v)}
-          title={sidebarOpen ? "ซ่อน sidebar" : "แสดง sidebar"}
-          className="absolute right-0 top-1/2 z-10 grid -translate-y-1/2 place-items-center rounded-l-md border border-r-0 bg-card px-1 py-3 text-default-400 shadow-base transition-colors hover:bg-default hover:text-default-foreground"
-        >
-          {sidebarOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
-        </button>
         <Card
           className={cn(
             "flex min-h-0 flex-col overflow-hidden",

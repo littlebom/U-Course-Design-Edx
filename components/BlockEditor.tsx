@@ -2,8 +2,6 @@
 
 import type { Block, Course } from "@/lib/schema";
 import type { AssetFile } from "./AssetUploader";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { BlockHeader } from "./blocks/BlockHeader";
 import { HtmlField } from "./blocks/HtmlField";
 import { VideoFields } from "./blocks/VideoFields";
@@ -36,15 +34,10 @@ export function BlockEditor({ course, path, onChange, assets, onAddAsset }: Prop
 
   return (
     <div className="space-y-5">
-      <BlockHeader block={block} />
-
-      <div className="space-y-1.5">
-        <Label>ชื่อแสดงผล</Label>
-        <Input
-          value={block.displayName}
-          onChange={(e) => update((b) => (b.displayName = e.target.value))}
-        />
-      </div>
+      <BlockHeader
+        block={block}
+        onRename={(v) => update((b) => (b.displayName = v))}
+      />
 
       {renderFields(block, update, assets, onAddAsset)}
     </div>

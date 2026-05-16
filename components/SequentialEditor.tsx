@@ -28,20 +28,23 @@ export function SequentialEditor({ course, path, onChange }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <span className="grid size-9 place-items-center rounded-md bg-info text-white shadow-base">
+        <span
+          className="grid size-9 shrink-0 place-items-center rounded-md bg-info text-white shadow-base"
+          title="หัวข้อ (Sequential)"
+        >
           <Layers size={16} />
         </span>
-        <div>
-          <div className="text-base font-semibold tracking-tight">หัวข้อ (Sequential)</div>
-          <Badge color="default" className="mt-0.5">
-            {seq.format ? seq.format : "ไม่ได้ให้คะแนน"}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <Input
+            value={seq.displayName}
+            onChange={(e) => update((s) => (s.displayName = e.target.value))}
+            placeholder="ชื่อหัวข้อ"
+            className="!h-9 flex-1 !text-base !font-semibold"
+          />
+          <Badge color="default" className="shrink-0">
+            {seq.format ? seq.format : "ไม่ให้คะแนน"}
           </Badge>
         </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <Label>ชื่อหัวข้อ (Display Name)</Label>
-        <Input value={seq.displayName} onChange={(e) => update((s) => (s.displayName = e.target.value))} />
       </div>
 
       <div className="space-y-1.5">
