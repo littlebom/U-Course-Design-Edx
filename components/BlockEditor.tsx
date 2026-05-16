@@ -4,14 +4,7 @@ import type { Block, Course } from "@/lib/schema";
 import type { AssetFile } from "./AssetUploader";
 import { BlockHeader } from "./blocks/BlockHeader";
 import { HtmlField } from "./blocks/HtmlField";
-import { VideoFields } from "./blocks/VideoFields";
-import { ProblemFields } from "./blocks/ProblemFields";
-import { LtiFields } from "./blocks/LtiFields";
-import { DiscussionFields } from "./blocks/DiscussionFields";
-import { PollFields } from "./blocks/PollFields";
-import { OraView } from "./blocks/OraView";
-import { LibraryContentView } from "./blocks/LibraryContentView";
-import { UnknownView } from "./blocks/UnknownView";
+import { getBlockModule } from "@/lib/blocks/registry";
 
 type Props = {
   course: Course;
@@ -39,34 +32,19 @@ export function BlockEditor({ course, path, onChange, assets, onAddAsset }: Prop
         onRename={(v) => update((b) => (b.displayName = v))}
       />
 
-      {renderFields(block, update, assets, onAddAsset)}
-    </div>
-  );
-}
-
-function renderFields(
-  block: Block,
-  update: (mut: (b: Block) => void) => void,
-  assets: Map<string, AssetFile>,
-  onAddAsset: (file: File, suggestedName?: string) => string,
-) {
-  switch (block.type) {
-    case "html":
-      return (
+      {/* HTML needs the asset context — handled specially. Everything else
+          flows through the block registry's Editor component. */}
+      {block.type === "html" ? (
         <HtmlField
           html={block.html}
           onChange={(v) => update((b) => ((b as Extract<Block, { type: "html" }>).html = v))}
           assets={assets}
           onAddAsset={onAddAsset}
         />
-      );
-    case "video":            return <VideoFields block={block} update={update} />;
-    case "problem":          return <ProblemFields block={block} update={update} />;
-    case "discussion":       return <DiscussionFields block={block} update={update} />;
-    case "lti":              return <LtiFields block={block} update={update} />;
-    case "poll":             return <PollFields block={block} update={update} />;
-    case "ora":              return <OraView block={block} />;
-    case "library_content":  return <LibraryContentView block={block} />;
-    case "unknown":          return <UnknownView block={block} />;
-  }
+      ) : (() => {
+        const Editor = getBlockModule(block.type).Editor;
+        return <Editor block={block} update={update} />;
+      })()}
+    </div>
+  );
 }
