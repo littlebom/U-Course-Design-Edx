@@ -96,13 +96,16 @@ export default function LibrariesPage() {
         }
         right={
           <>
-            <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-default px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4" title="Import Library v1 .tar.gz แล้วอัปเกรดเป็น v2 อัตโนมัติ">
+            <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-default px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4" title="Import Library v1 (.zip หรือ .tar.gz) แล้วอัปเกรดเป็น v2 อัตโนมัติ">
               <ArrowUpFromLine size={14} /> Upgrade v1 → v2
               <input
                 type="file"
-                accept=".tar.gz,.tgz,application/gzip,application/x-gzip"
+                accept=".zip,.tar.gz,.tgz,application/zip,application/gzip,application/x-gzip"
                 className="hidden"
-                onChange={(e) => e.target.files?.[0] && handleImportV1Tar(e.target.files[0])}
+                onChange={(e) => {
+                  if (e.target.files?.[0]) handleImportV1Tar(e.target.files[0]);
+                  e.target.value = "";
+                }}
               />
             </label>
             <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-default px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4" title="Import Library v2 .zip จาก Open edX Ulmo">

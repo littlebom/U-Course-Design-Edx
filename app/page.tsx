@@ -14,16 +14,21 @@ import {
   PanelRightClose,
   Replace,
   ChevronDown,
+  Sparkles,
 } from "lucide-react";
 import type { Course, ProblemBlock } from "@/lib/schema";
 import { sampleCourse } from "@/lib/sample";
 import { validateCourse } from "@/lib/validate";
+import { cleanCourse, type CleanAction } from "@/lib/clean";
+import { checkUlmoReadiness } from "@/lib/readiness";
 import { CourseOutline } from "@/components/CourseOutline";
 import { BlockEditor } from "@/components/BlockEditor";
 import { JsonDropzone, type JsonDropzoneHandle } from "@/components/JsonDropzone";
 import { OlxDropzone, type OlxDropzoneHandle } from "@/components/OlxDropzone";
 import { AssetUploader, type AssetFile } from "@/components/AssetUploader";
 import { ValidationPanel } from "@/components/ValidationPanel";
+import { ReadinessPanel } from "@/components/ReadinessPanel";
+import { CleanupDialog } from "@/components/CleanupDialog";
 import { ExportButton } from "@/components/ExportButton";
 import { BulkProblemImport } from "@/components/BulkProblemImport";
 import { CourseInfoDialog } from "@/components/CourseInfoDialog";
@@ -73,6 +78,8 @@ function PageInner() {
   const [topErr, setTopErr] = useState<string | null>(null);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [cleanupOpen, setCleanupOpen] = useState(false);
+  const [cleanupPreview, setCleanupPreview] = useState<{ course: Course; actions: CleanAction[] } | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [linkedFile, setLinkedFile] = useState<{ handle: FileSystemFileHandle; name: string } | null>(null);
   const [linkedSavedAt, setLinkedSavedAt] = useState<number | null>(null);
@@ -191,6 +198,10 @@ function PageInner() {
     [course, assets],
   );
   const hasErrors = issues.some((i) => i.level === "error");
+  const readiness = useMemo(
+    () => checkUlmoReadiness(course, new Set(assets.keys())),
+    [course, assets],
+  );
 
   const addAsset = (file: File, suggestedName?: string): string => {
     const raw = (suggestedName || file.name || `image-${Date.now()}.png`).replace(/\s+/g, "_");
@@ -435,13 +446,37 @@ function PageInner() {
               </CardContent>
             </Card>
             <Card className="flex max-h-[40%] shrink-0 flex-col overflow-hidden">
-              <CardHeader className="shrink-0 border-b py-2">
+              <CardHeader className="flex shrink-0 flex-row items-center justify-between border-b py-2">
                 <CardTitle className="text-xs font-semibold uppercase tracking-wider text-default-500">
                   ตรวจสอบ
                 </CardTitle>
+                {hasErrors && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="!h-6 !gap-1 !px-2 !text-2xs text-default-500 hover:text-primary"
+                    title="แก้/ลบ block ที่เป็น bug อัตโนมัติ"
+                    onClick={() => {
+                      setCleanupPreview(cleanCourse(course, new Set(assets.keys())));
+                      setCleanupOpen(true);
+                    }}
+                  >
+                    <Sparkles size={12} /> ทำความสะอาด
+                  </Button>
+                )}
               </CardHeader>
               <CardContent className="min-h-0 flex-1 overflow-auto p-2">
                 <ValidationPanel issues={issues} />
+              </CardContent>
+            </Card>
+            <Card className="flex max-h-[45%] shrink-0 flex-col overflow-hidden">
+              <CardHeader className="shrink-0 border-b py-2">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-default-500">
+                  ความพร้อม Ulmo
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="min-h-0 flex-1 overflow-auto p-3">
+                <ReadinessPanel report={readiness} />
               </CardContent>
             </Card>
           </aside>
@@ -459,6 +494,19 @@ function PageInner() {
         onAssetsChange={handleAssetsChange}
       />
 
+      <CleanupDialog
+        open={cleanupOpen}
+        onOpenChange={setCleanupOpen}
+        actions={cleanupPreview?.actions ?? []}
+        onConfirm={() => {
+          if (cleanupPreview) {
+            setCourse(cleanupPreview.course);
+            setSel({ ci: 0, si: 0, vi: 0, bi: 0 });
+            setSeqSel(null);
+          }
+          setCleanupOpen(false);
+        }}
+      />
 
     </div>
   );

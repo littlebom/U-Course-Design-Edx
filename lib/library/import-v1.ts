@@ -1,6 +1,6 @@
 "use client";
 
-import { extractTar, getXml, attr } from "../olx/import/tar";
+import { extractArchive, getXml, attr, type TarEntry } from "../olx/import/tar";
 import { walkFlatBlocks } from "../olx/import/walk-flat-blocks";
 import {
   librarySchema,
@@ -32,6 +32,30 @@ function hexToUuid(hex: string): string {
   return globalThis.crypto?.randomUUID?.() ?? `00000000-0000-4000-8000-${Date.now().toString(16).padStart(12, "0")}`;
 }
 
+// Find library.xml ANYWHERE in the archive (it may be nested under one or more
+// wrapper directories, or sit beside stray root files), verify its root element
+// is <library>, then re-key every file relative to that manifest's directory so
+// downstream block lookups like "problem/<id>.xml" resolve. Returns null if no
+// valid Library v1 manifest exists.
+function rerootAtLibraryManifest(files: Map<string, TarEntry>): Map<string, TarEntry> | null {
+  const candidates = [...files.keys()]
+    .filter((k) => k === "library.xml" || k.endsWith("/library.xml"))
+    .sort((a, b) => a.split("/").length - b.split("/").length); // shallowest first
+
+  for (const path of candidates) {
+    const el = getXml(files, path);
+    if (!el || el.tagName !== "library") continue;
+    const base = path.slice(0, path.length - "library.xml".length); // "" or "dir/.../"
+    if (!base) return files;
+    const rooted = new Map<string, TarEntry>();
+    for (const [k, v] of files) {
+      if (k.startsWith(base)) rooted.set(k.slice(base.length), v);
+    }
+    return rooted;
+  }
+  return null;
+}
+
 // Parse a Library v1 .tar.gz export and convert it into a Library v2 model.
 // Inner block XML (problem/html/video) is reused via the existing parseBlockFile.
 export async function parseLibraryV1Tar(
@@ -42,11 +66,20 @@ export async function parseLibraryV1Tar(
   const assets = new Map<string, File>();
   const wrapMode: V1WrapMode = opts.wrapMode ?? "flat";
 
-  const files = await extractTar(buffer);
+  const archive = extractArchive(buffer);
 
-  // ── library.xml ──────────────────────────────────────────────────────────
-  const libEl = getXml(files, "library.xml");
-  if (!libEl) throw new Error("ไม่พบ library/library.xml — ไฟล์อาจไม่ใช่ Library v1");
+  // ── Locate library.xml (robust to wrapper-dir nesting in .zip/.tar.gz) ────
+  const files = rerootAtLibraryManifest(archive);
+  if (!files) {
+    if ([...archive.keys()].some((k) => k.endsWith("package.toml"))) {
+      throw new Error(
+        'ไฟล์นี้เป็น Library v2 อยู่แล้ว (พบ package.toml) — ใช้ปุ่ม "Import .zip" แทน ไม่ต้อง Upgrade',
+      );
+    }
+    const sample = [...archive.keys()].slice(0, 6).join(", ");
+    throw new Error(`ไม่พบ library.xml — ไฟล์อาจไม่ใช่ Library v1 (พบ: ${sample || "ว่าง"})`);
+  }
+  const libEl = getXml(files, "library.xml")!;
 
   const displayName = attr(libEl, "display_name") || "Imported Library";
   const org = attr(libEl, "org") || "UNKNOWN";

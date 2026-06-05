@@ -22,6 +22,8 @@ import type {
 } from "@/lib/library/schema";
 import { isContainer } from "@/lib/library/schema";
 import { downloadLibraryZip } from "@/lib/library/export";
+import { checkLibraryReadiness } from "@/lib/library/readiness";
+import { ReadinessPanel } from "@/components/ReadinessPanel";
 import { EntityRow } from "@/components/library/EntityRow";
 import { AddEntityMenu, type AddEntityKind } from "@/components/library/AddEntityMenu";
 import { ContainerEditor } from "@/components/library/ContainerEditor";
@@ -75,6 +77,11 @@ export default function LibraryEditorPage() {
       Array.from(assets.entries()).map(([k, f]) => [k, { name: k, size: f.size, blob: f }]),
     ),
     [assets],
+  );
+
+  const readiness = useMemo(
+    () => (library ? checkLibraryReadiness(library) : null),
+    [library],
   );
 
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -162,7 +169,7 @@ export default function LibraryEditorPage() {
       )}
 
       <main className="grid flex-1 grid-cols-12 gap-4 overflow-hidden p-4">
-        <Card className="col-span-4 flex min-h-0 flex-col overflow-hidden">
+        <Card className="col-span-3 flex min-h-0 flex-col overflow-hidden">
           <CardHeader className="flex shrink-0 flex-row items-center justify-between gap-2 border-b py-3">
             <Tabs value={leftTab} onValueChange={(v) => setLeftTab(v as "entities" | "collections")}>
               <TabsList className="bg-default-100 !gap-0.5 !p-0.5">
@@ -231,7 +238,7 @@ export default function LibraryEditorPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-8 flex min-h-0 flex-col overflow-hidden">
+        <Card className="col-span-6 flex min-h-0 flex-col overflow-hidden">
           <CardHeader className="shrink-0 border-b py-3">
             <CardTitle className="text-sm font-semibold uppercase tracking-wider text-default-500">
               {selected ? `แก้ไข: ${entityTitle(selected)}` : "ตัวแก้ไข"}
@@ -261,6 +268,17 @@ export default function LibraryEditorPage() {
                 })}
               />
             )}
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-3 flex min-h-0 flex-col overflow-hidden">
+          <CardHeader className="shrink-0 border-b py-3">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-default-500">
+              ความพร้อม Ulmo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="min-h-0 flex-1 overflow-auto p-3">
+            {readiness && <ReadinessPanel report={readiness} />}
           </CardContent>
         </Card>
       </main>
