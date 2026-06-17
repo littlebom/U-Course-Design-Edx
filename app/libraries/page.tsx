@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Library as LibIcon, Copy, Download, Plus, Trash2, Upload, RotateCcw, FileJson, ArrowUpFromLine } from "lucide-react";
+import { Library as LibIcon, Copy, Download, Plus, Trash2, Upload, RotateCcw, ArrowUpFromLine, ChevronDown } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { LibraryRecord } from "@/lib/db/libraries";
 import { libraryService } from "@/lib/domain";
 import { parseLibraryZip } from "@/lib/library/import";
@@ -20,6 +21,8 @@ export default function LibrariesPage() {
   const [showTrash, setShowTrash] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const v1InputRef = useRef<HTMLInputElement>(null);
+  const zipInputRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -85,6 +88,7 @@ export default function LibrariesPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar
+        hideModeNav
         brand={
           <div className="flex items-center gap-2">
             <LibIcon size={16} className="text-primary" />
@@ -96,27 +100,46 @@ export default function LibrariesPage() {
         }
         right={
           <>
-            <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-default px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4" title="Import Library v1 (.zip หรือ .tar.gz) แล้วอัปเกรดเป็น v2 อัตโนมัติ">
-              <ArrowUpFromLine size={14} /> Upgrade v1 → v2
-              <input
-                type="file"
-                accept=".zip,.tar.gz,.tgz,application/zip,application/gzip,application/x-gzip"
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files?.[0]) handleImportV1Tar(e.target.files[0]);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-default px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4" title="Import Library v2 .zip จาก Open edX Ulmo">
-              <Upload size={14} /> Import .zip
-              <input
-                type="file"
-                accept=".zip,application/zip"
-                className="hidden"
-                onChange={(e) => e.target.files?.[0] && handleImportZip(e.target.files[0])}
-              />
-            </label>
+            {/* Hidden inputs, triggered from the นำเข้า menu */}
+            <input
+              ref={zipInputRef}
+              type="file"
+              accept=".zip,application/zip"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.[0]) handleImportZip(e.target.files[0]);
+                e.target.value = "";
+              }}
+            />
+            <input
+              ref={v1InputRef}
+              type="file"
+              accept=".zip,.tar.gz,.tgz,application/zip,application/gzip,application/x-gzip"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.[0]) handleImportV1Tar(e.target.files[0]);
+                e.target.value = "";
+              }}
+            />
+
+            {/* นำเข้า — group v2 import + v1 upgrade */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Upload size={14} className="me-1.5" /> นำเข้า
+                  <ChevronDown size={12} className="ml-1 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuItem onClick={() => zipInputRef.current?.click()}>
+                  <Upload size={13} className="me-2 text-default-500" /> Import .zip (Library v2)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => v1InputRef.current?.click()}>
+                  <ArrowUpFromLine size={13} className="me-2 text-default-500" /> Upgrade v1 → v2 (.zip/.tar.gz)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button onClick={handleCreate} color="primary" size="sm">
               <Plus size={14} className="me-1.5" /> สร้าง Library
             </Button>
@@ -195,6 +218,7 @@ function LibraryCard({
   onRestore: () => void;
   onHardDelete: () => void;
 }) {
+  const shared = (rec as LibraryRecord & { shared?: { permission: string; ownerName: string } }).shared;
   const containerCount = rec.library.entities.filter((e) => e.kind === "container").length;
   const xblockCount = rec.library.entities.filter((e) => e.kind === "xblock").length;
   return (
@@ -202,6 +226,11 @@ function LibraryCard({
       <CardHeader className="cursor-pointer pb-2" onClick={inTrash ? undefined : onOpen}>
         <CardTitle className="line-clamp-2 text-base">{rec.name}</CardTitle>
         <div className="text-xs font-mono text-default-500">{rec.library.learningPackage.key}</div>
+        {shared && (
+          <span className="inline-flex w-fit items-center gap-1 rounded bg-info/10 px-1.5 py-0.5 text-2xs text-info ring-1 ring-info/20">
+            แชร์โดย {shared.ownerName} · {shared.permission === "edit" ? "แก้ไขได้" : "ดูอย่างเดียว"}
+          </span>
+        )}
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-between pt-0">
         <div className="text-xs text-default-500">

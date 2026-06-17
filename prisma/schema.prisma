@@ -1,0 +1,94 @@
+// U-CourseBuilder multi-user backend schema.
+// Course/Library documents are stored whole as JSON (matches the existing
+// CourseRecord/LibraryRecord shape in lib/db/types.ts). Assets are stored as
+// bytes so a single pg_dump backs everything up.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("user") // "user" | "admin"
+  createdAt    DateTime @default(now())
+
+  courses   Course[]
+  libraries Library[]
+}
+
+model Course {
+  id        String    @id @default(uuid())
+  ownerId   String
+  name      String
+  data      Json
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  owner  User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  assets CourseAsset[]
+
+  @@index([ownerId])
+  @@index([updatedAt])
+}
+
+model Library {
+  id        String    @id @default(uuid())
+  ownerId   String
+  name      String
+  data      Json
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  owner  User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  assets LibraryAsset[]
+
+  @@index([ownerId])
+  @@index([updatedAt])
+}
+
+model CourseAsset {
+  courseId String
+  fileName String
+  mime     String
+  bytes    Bytes
+  addedAt  DateTime @default(now())
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, fileName])
+}
+
+model LibraryAsset {
+  libraryId String
+  assetKey  String
+  mime      String
+  bytes     Bytes
+  addedAt   DateTime @default(now())
+
+  library Library @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+
+  @@id([libraryId, assetKey])
+}
+
+model Share {
+  id               String   @id @default(uuid())
+  resourceType     String // "course" | "library"
+  resourceId       String
+  ownerId          String
+  sharedWithUserId String
+  permission       String   @default("edit") // "view" | "edit"
+  createdAt        DateTime @default(now())
+
+  @@unique([resourceType, resourceId, sharedWithUserId])
+  @@index([sharedWithUserId])
+}

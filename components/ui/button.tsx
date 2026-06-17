@@ -41,11 +41,12 @@ const buttonVariants = cva(
         true: "w-full",
       },
       size: {
-        default: "h-11 md:px-6  px-4 ",
-        sm: "h-7 text-xs md:px-4  px-3",
+        // Harmonised heights — tight 32–44px band (4px steps), aligned with inputs (h-9)
+        default: "h-10 md:px-6  px-4 ",
+        sm: "h-8 text-xs md:px-4  px-3",
         md: "h-9",
-        lg: "h-12  px-8 text-base md:px-10 px-7",
-        icon: "h-10 w-10 p-0 md:px-0 flex justify-center items-center",
+        lg: "h-11  px-8 text-base md:px-10 px-7",
+        icon: "h-9 w-9 p-0 md:px-0 flex justify-center items-center",
 
       }
     },

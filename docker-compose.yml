@@ -1,0 +1,39 @@
+# Production stack: Next.js app + PostgreSQL.
+# Secrets/config come from a server-side .env file (NOT committed) — see .env.example.
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?schema=public
+      AUTH_SECRET: ${AUTH_SECRET}
+      SEED_ADMIN_USER: ${SEED_ADMIN_USER}
+      SEED_ADMIN_PASS: ${SEED_ADMIN_PASS}
+      SEED_ADMIN_NAME: ${SEED_ADMIN_NAME}
+    # Bind to localhost only; nginx proxies to it. APP_PORT lets us test on 3001
+    # before cutting over to 3000.
+    ports:
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+
+volumes:
+  pgdata:

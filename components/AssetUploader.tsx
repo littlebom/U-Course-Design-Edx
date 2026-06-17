@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Image as ImageIcon, Upload, Trash2, Copy, FileText } from "lucide-react";
+import { Image as ImageIcon, Upload, Trash2, Copy, FileText, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -11,9 +11,12 @@ export type AssetFile = { name: string; size: number; blob: Blob };
 type Props = {
   assets: Map<string, AssetFile>;
   onChange: (next: Map<string, AssetFile>) => void;
+  /** When provided, shows a rename button per asset. The handler must also update
+   *  all asset:// references in the course (atomic rename). */
+  onRename?: (oldName: string, newName: string) => void;
 };
 
-export function AssetUploader({ assets, onChange }: Props) {
+export function AssetUploader({ assets, onChange, onRename }: Props) {
   const onDrop = useCallback(
     async (files: File[]) => {
       const next = new Map(assets);
@@ -32,6 +35,13 @@ export function AssetUploader({ assets, onChange }: Props) {
   };
 
   const copyRef = (name: string) => navigator.clipboard?.writeText(`asset://${name}`);
+
+  const rename = onRename
+    ? (name: string) => {
+        const next = window.prompt("ตั้งชื่อไฟล์ใหม่ (ภาษาอังกฤษ):", name);
+        if (next && next.trim() && next.trim() !== name) onRename(name, next.trim());
+      }
+    : undefined;
 
   return (
     <div className="space-y-2">
@@ -58,7 +68,7 @@ export function AssetUploader({ assets, onChange }: Props) {
       ) : (
         <ul className="space-y-1">
           {[...assets.values()].map((a) => (
-            <AssetRow key={a.name} asset={a} onCopy={copyRef} onRemove={remove} />
+            <AssetRow key={a.name} asset={a} onCopy={copyRef} onRemove={remove} onRename={rename} />
           ))}
         </ul>
       )}
@@ -72,10 +82,12 @@ function AssetRow({
   asset,
   onCopy,
   onRemove,
+  onRename,
 }: {
   asset: AssetFile;
   onCopy: (name: string) => void;
   onRemove: (name: string) => void;
+  onRename?: (name: string) => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const urlRef = useRef<string | null>(null);
@@ -112,6 +124,17 @@ function AssetRow({
         </span>
         <span className="text-2xs text-muted-foreground">{fmtSize(asset.size)}</span>
       </div>
+      {onRename && (
+        <Button
+          size="icon"
+          variant="ghost"
+          className="!h-6 !w-6 shrink-0 opacity-0 group-hover:opacity-100"
+          onClick={() => onRename(asset.name)}
+          title="เปลี่ยนชื่อไฟล์ (อัพเดทลิงก์ในคอร์สให้อัตโนมัติ)"
+        >
+          <Pencil size={11} />
+        </Button>
+      )}
       <Button
         size="icon"
         variant="ghost"

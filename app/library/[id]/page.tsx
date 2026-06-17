@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Library as LibIcon, Download, Info, FolderTree, FolderOpen, ImageIcon } from "lucide-react";
+import { Library as LibIcon, Download, Info, FolderTree, FolderOpen, ImageIcon, Share2, MoreHorizontal } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CollectionEditor } from "@/components/CollectionEditor";
 import { AssetUploader, type AssetFile } from "@/components/AssetUploader";
 import { libraryService } from "@/lib/domain";
@@ -24,6 +25,7 @@ import { isContainer } from "@/lib/library/schema";
 import { downloadLibraryZip } from "@/lib/library/export";
 import { checkLibraryReadiness } from "@/lib/library/readiness";
 import { ReadinessPanel } from "@/components/ReadinessPanel";
+import { ShareDialog } from "@/components/ShareDialog";
 import { EntityRow } from "@/components/library/EntityRow";
 import { AddEntityMenu, type AddEntityKind } from "@/components/library/AddEntityMenu";
 import { ContainerEditor } from "@/components/library/ContainerEditor";
@@ -41,6 +43,7 @@ export default function LibraryEditorPage() {
   const [err, setErr] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [leftTab, setLeftTab] = useState<"entities" | "collections" | "assets">("entities");
 
   // Race-safe asset CRUD via shared hook.
@@ -137,6 +140,10 @@ export default function LibraryEditorPage() {
   return (
     <div className="flex h-screen flex-col bg-default-50">
       <Navbar
+        hideModeNav
+        showBackToCourses
+        backHref="/libraries"
+        backLabel="คลังเนื้อหา"
         brand={
           <button
             type="button"
@@ -151,15 +158,24 @@ export default function LibraryEditorPage() {
         left={<div className="ml-2"><SaveIndicator status={saveStatus} savedAt={savedAt} /></div>}
         right={
           <>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/libraries")}>
-              ← Libraries
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setInfoOpen(true)}>
-              <Info size={14} className="me-1.5" /> Library Info
+            <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
+              <Share2 size={14} className="me-1.5" /> แชร์
             </Button>
             <Button color="primary" size="sm" onClick={handleExport}>
               <Download size={14} className="me-1.5" /> Export .zip
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" title="เพิ่มเติม" aria-label="เพิ่มเติม" className="!px-2">
+                  <MoreHorizontal size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={() => setInfoOpen(true)}>
+                  <Info size={13} className="me-2 text-default-500" /> ข้อมูล Library
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
         }
       />
@@ -289,6 +305,16 @@ export default function LibraryEditorPage() {
         onChange={update}
         onClose={() => setInfoOpen(false)}
       />
+
+      {libraryId && (
+        <ShareDialog
+          resourceType="library"
+          resourceId={libraryId}
+          resourceTitle={library.learningPackage.title}
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+        />
+      )}
     </div>
   );
 }

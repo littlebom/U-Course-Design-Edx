@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { HtmlField } from "@/components/blocks/HtmlField";
 
 type Props = {
   open: boolean;
@@ -22,9 +23,10 @@ type Props = {
   onClose: () => void;
   assets: Map<string, AssetFile>;
   onAssetsChange: (next: Map<string, AssetFile>) => void;
+  onAddAsset: (file: File, suggestedName?: string) => string;
 };
 
-export function CourseInfoDialog({ open, course, onChange, onClose, assets, onAssetsChange }: Props) {
+export function CourseInfoDialog({ open, course, onChange, onClose, assets, onAssetsChange, onAddAsset }: Props) {
   const setMeta = <K extends keyof Course["course"]>(key: K, val: Course["course"][K]) =>
     onChange({ ...course, course: { ...course.course, [key]: val } });
   const setAbout = <K extends keyof Course["about"]>(key: K, val: Course["about"][K]) =>
@@ -199,15 +201,14 @@ export function CourseInfoDialog({ open, course, onChange, onClose, assets, onAs
           </Section>
 
           <Section title="Course Overview (HTML)">
-            <Textarea
-              rows={10}
-              className="!font-mono !text-base"
-              value={a.overview}
-              onChange={(e) => setAbout("overview", e.target.value)}
-              placeholder='<section class="about"><h2>เกี่ยวกับรายวิชา</h2><p>...</p></section>'
+            <HtmlField
+              html={a.overview}
+              onChange={(v) => setAbout("overview", v)}
+              assets={assets}
+              onAddAsset={onAddAsset}
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              เนื้อหาที่จะแสดงในหน้า landing page ของคอร์สบน Open edX
+              เนื้อหาที่จะแสดงในหน้า landing page ของคอร์สบน Open edX (ใช้ TinyMCE เหมือน Studio)
             </p>
           </Section>
 

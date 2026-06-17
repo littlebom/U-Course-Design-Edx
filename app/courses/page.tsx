@@ -1,15 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Copy, Download, Plus, Trash2, Upload, RotateCcw, FileJson, HardDrive, Archive, ArchiveRestore, FileCode2 } from "lucide-react";
+import { BookOpen, Copy, Download, Plus, Trash2, Upload, RotateCcw, FileJson, FileCode2, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Navbar } from "@/components/Navbar";
 import type { CourseRecord } from "@/lib/db/types";
 import { courseService } from "@/lib/domain";
 import { migrateLegacyLocalStorage } from "@/lib/db/migrate";
 import { emptyCourseSeed, sampleCourseSeed } from "@/lib/db/seed";
-import { downloadBackup, importBackup } from "@/lib/db/backup";
-import { getStorageEstimate } from "@/lib/db";
 import { courseSchema } from "@/lib/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,13 +22,12 @@ export default function CoursesPage() {
   const [showTrash, setShowTrash] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [storage, setStorage] = useState<{ usage: number; quota: number } | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
     try {
       const list = await courseService.list(true);
       setCourses(list);
-      setStorage(await getStorageEstimate());
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -61,16 +59,6 @@ export default function CoursesPage() {
     }
   };
 
-  const handleRestoreBackup = async (file: File) => {
-    try {
-      const res = await importBackup(file);
-      alert(`นำเข้าสำเร็จ ${res.imported} คอร์ส${res.skipped ? ` · ข้าม ${res.skipped}` : ""}`);
-      refresh();
-    } catch (err) {
-      alert(`Restore ล้มเหลว: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  };
-
   const handleImportJson = async (file: File) => {
     try {
       const text = await file.text();
@@ -90,6 +78,7 @@ export default function CoursesPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar
+        hideModeNav
         brand={
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-primary" />
@@ -102,39 +91,59 @@ export default function CoursesPage() {
         }
         right={
           <>
-            <label className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-default px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4" title="Import course จาก JSON ไฟล์">
-              <Upload size={14} /> Import JSON
-              <input
-                type="file"
-                accept="application/json"
-                className="hidden"
-                onChange={(e) => e.target.files?.[0] && handleImportJson(e.target.files[0])}
-              />
-            </label>
-            <Button onClick={handleDownloadTemplates} variant="outline" size="sm" title="ดาวน์โหลด XML template สำหรับสร้างคอร์สแบบ structured">
-              <FileCode2 size={14} className="me-1.5" /> XML Template
-            </Button>
-            <Button onClick={() => handleCreate("blank")} variant="outline" size="sm">
-              <FileJson size={14} className="me-1.5" /> สร้างคอร์สเปล่า
-            </Button>
-            <Button onClick={() => handleCreate("sample")} color="primary" size="sm">
-              <Plus size={14} className="me-1.5" /> สร้างจากตัวอย่าง
-            </Button>
+            {/* Hidden input for "Import JSON" (triggered from the นำเข้า menu) */}
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.[0]) handleImportJson(e.target.files[0]);
+                e.target.value = "";
+              }}
+            />
+
+            {/* นำเข้า — group all import/template actions */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Upload size={14} className="me-1.5" /> นำเข้า
+                  <ChevronDown size={12} className="ml-1 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60">
+                <DropdownMenuItem onClick={() => importInputRef.current?.click()}>
+                  <Upload size={13} className="me-2 text-default-500" /> Import จากไฟล์ JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownloadTemplates}>
+                  <FileCode2 size={13} className="me-2 text-default-500" /> ดาวน์โหลด XML Template
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* สร้างคอร์ส — primary create action */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button color="primary" size="sm">
+                  <Plus size={14} className="me-1.5" /> สร้างคอร์ส
+                  <ChevronDown size={12} className="ml-1 opacity-80" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={() => handleCreate("sample")}>
+                  <BookOpen size={13} className="me-2 text-default-500" /> จากตัวอย่าง
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleCreate("blank")}>
+                  <FileJson size={13} className="me-2 text-default-500" /> คอร์สเปล่า
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
         }
       />
 
       <main className="mx-auto max-w-7xl px-6 py-6">
         {error && <DbErrorBanner error={error} />}
-
-        {storage && storage.quota > 0 && (
-          <StorageBar
-            usage={storage.usage}
-            quota={storage.quota}
-            onBackup={() => downloadBackup()}
-            onRestore={handleRestoreBackup}
-          />
-        )}
 
         <div className="mb-4 flex items-center gap-2 text-sm">
           <button
@@ -218,6 +227,7 @@ function CourseCard({
   onExport: () => void;
 }) {
   const c = rec.course.course;
+  const shared = (rec as CourseRecord & { shared?: { permission: string; ownerName: string } }).shared;
   const chCount = rec.course.chapters.length;
   const blockCount = rec.course.chapters.reduce(
     (n, ch) => n + ch.sequentials.reduce((m, s) => m + s.verticals.reduce((k, v) => k + v.blocks.length, 0), 0),
@@ -227,6 +237,11 @@ function CourseCard({
     <Card className="group flex flex-col">
       <CardHeader className="cursor-pointer pb-2" onClick={inTrash ? undefined : onOpen}>
         <CardTitle className="line-clamp-2 text-base">{rec.name}</CardTitle>
+        {shared && (
+          <span className="inline-flex w-fit items-center gap-1 rounded bg-info/10 px-1.5 py-0.5 text-2xs text-info ring-1 ring-info/20">
+            แชร์โดย {shared.ownerName} · {shared.permission === "edit" ? "แก้ไขได้" : "ดูอย่างเดียว"}
+          </span>
+        )}
         <div className="flex items-center gap-1 text-xs text-default-500">
           <span className="font-mono">{c.org}</span>
           <span>·</span>
@@ -266,57 +281,6 @@ function CourseCard({
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-function StorageBar({
-  usage, quota, onBackup, onRestore,
-}: {
-  usage: number;
-  quota: number;
-  onBackup: () => void;
-  onRestore: (file: File) => void;
-}) {
-  const pct = quota === 0 ? 0 : Math.min(100, (usage / quota) * 100);
-  const usedMb = (usage / 1024 / 1024).toFixed(1);
-  const quotaMb = (quota / 1024 / 1024).toFixed(0);
-  const isWarn = pct > 80;
-  return (
-    <div className="mb-4 flex items-center gap-3 rounded-md border bg-card px-3 py-2 text-xs">
-      <HardDrive size={14} className="text-default-400" />
-      <div className="flex-1">
-        <div className="flex items-center justify-between">
-          <span className="text-default-500">
-            ใช้ {usedMb} MB จาก {quotaMb} MB ({pct.toFixed(1)}%)
-          </span>
-          {isWarn && <span className="text-destructive">พื้นที่ใกล้เต็ม</span>}
-        </div>
-        <div className="mt-1 h-1 overflow-hidden rounded-full bg-default-100">
-          <div
-            className={isWarn ? "h-full bg-destructive" : "h-full bg-primary"}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-1">
-        <Button variant="ghost" size="sm" onClick={onBackup} title="สำรองข้อมูลทุกคอร์ส + assets เป็น JSON ไฟล์เดียว">
-          <Archive size={12} className="me-1" /> Backup
-        </Button>
-        <label className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-md px-3 text-xs font-medium text-default hover:bg-default hover:text-default-foreground md:px-4" title="กู้คืนจากไฟล์ backup (สร้างคอร์สใหม่ ไม่ทับของเดิม)">
-          <ArchiveRestore size={12} /> Restore
-          <input
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) onRestore(f);
-              e.target.value = "";
-            }}
-          />
-        </label>
-      </div>
-    </div>
   );
 }
 

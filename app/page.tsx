@@ -12,9 +12,9 @@ import {
   Link2,
   PanelRightOpen,
   PanelRightClose,
-  Replace,
-  ChevronDown,
   Sparkles,
+  Share2,
+  MoreHorizontal,
 } from "lucide-react";
 import type { Course, ProblemBlock } from "@/lib/schema";
 import { sampleCourse } from "@/lib/sample";
@@ -32,6 +32,7 @@ import { CleanupDialog } from "@/components/CleanupDialog";
 import { ExportButton } from "@/components/ExportButton";
 import { BulkProblemImport } from "@/components/BulkProblemImport";
 import { CourseInfoDialog } from "@/components/CourseInfoDialog";
+import { ShareDialog } from "@/components/ShareDialog";
 import { SequentialEditor } from "@/components/SequentialEditor";
 import { CourseSwitcher } from "@/components/CourseSwitcher";
 import { SaveIndicator } from "@/components/SaveIndicator";
@@ -50,7 +51,7 @@ import {
 } from "@/lib/fileHandle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -78,6 +79,7 @@ function PageInner() {
   const [topErr, setTopErr] = useState<string | null>(null);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [cleanupOpen, setCleanupOpen] = useState(false);
   const [cleanupPreview, setCleanupPreview] = useState<{ course: Course; actions: CleanAction[] } | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -218,6 +220,102 @@ function PageInner() {
     return fname;
   };
 
+  // Rename an asset AND rewrite every asset:// reference in the course (HTML,
+  // video transcript srtFile, course thumbnail) atomically — so links don't break.
+  const renameAsset = async (oldName: string, rawNew: string) => {
+    const newName = rawNew.trim().replace(/\s+/g, "_").replace(/[^A-Za-z0-9._\-]/g, "");
+    if (!newName) { setTopErr("ชื่อใหม่ต้องเป็นตัวอักษร/ตัวเลขภาษาอังกฤษ (a–z, 0–9, . _ -)"); return; }
+    if (newName === oldName) return;
+    if (assets.has(newName)) { setTopErr(`มีไฟล์ชื่อ "${newName}" อยู่แล้ว`); return; }
+    const af = assets.get(oldName);
+    if (!af) return;
+
+    // 1) rewrite references in the course (Unicode-aware: catches Thai-named refs too)
+    const esc = oldName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`asset:\\/\\/${esc}(?=["'\\s),<]|$)`, "g");
+    const nextCourse = structuredClone(course);
+    for (const ch of nextCourse.chapters)
+      for (const seq of ch.sequentials)
+        for (const v of seq.verticals)
+          for (const b of v.blocks) {
+            if (b.type === "html") b.html = b.html.replace(re, `asset://${newName}`);
+            else if (b.type === "video")
+              b.transcripts = b.transcripts.map((t) => (t.srtFile === oldName ? { ...t, srtFile: newName } : t));
+          }
+    if (nextCourse.about.courseImageName === oldName) nextCourse.about.courseImageName = newName;
+    setCourse(nextCourse);
+
+    // 2) rename the asset itself (delete old + add new), preserving bytes
+    const blob = af.blob;
+    const renamed = blob instanceof File ? new File([blob], newName, { type: blob.type }) : blob;
+    const map = new Map(assets);
+    map.delete(oldName);
+    map.set(newName, { name: newName, size: af.size, blob: renamed });
+    await handleAssetsChange(map);
+  };
+
+  // Bulk-rename every asset whose name isn't ASCII-safe (Thai, spaces, parens, …)
+  // to a slug, updating all references across the course in one atomic operation.
+  const fixAllAssetNames = async () => {
+    const SAFE = /^[A-Za-z0-9._\-/]+$/;
+    const used = new Set(assets.keys());
+    const renames: Array<[string, string]> = [];
+    let gen = 1;
+    for (const oldName of assets.keys()) {
+      if (SAFE.test(oldName)) continue;
+      const dot = oldName.lastIndexOf(".");
+      const ext = dot > 0 ? oldName.slice(dot).replace(/[^A-Za-z0-9.]/g, "").toLowerCase() : "";
+      let base = (dot > 0 ? oldName.slice(0, dot) : oldName)
+        .normalize("NFKD")
+        .replace(/[^\x20-\x7E]/g, "")
+        .replace(/[^A-Za-z0-9._-]+/g, "-")
+        .replace(/^[-_.]+|[-_.]+$/g, "")
+        .replace(/-{2,}/g, "-");
+      if (!base) base = "asset";
+      let candidate = base + ext;
+      while (used.has(candidate)) candidate = `${base}-${gen++}${ext}`;
+      used.add(candidate);
+      renames.push([oldName, candidate]);
+    }
+    if (!renames.length) { setTopErr("ไม่มีไฟล์ชื่อ non-ASCII ให้แก้"); return; }
+    const preview = renames.slice(0, 8).map(([o, n]) => `${o} → ${n}`).join("\n");
+    if (!confirm(`เปลี่ยนชื่อ ${renames.length} ไฟล์ให้เป็น ASCII และอัพเดตลิงก์ในคอร์สอัตโนมัติ?\n\n${preview}${renames.length > 8 ? `\n…และอีก ${renames.length - 8}` : ""}`)) return;
+
+    const lookup = new Map(renames);
+    const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const nextCourse = structuredClone(course);
+    for (const ch of nextCourse.chapters)
+      for (const seq of ch.sequentials)
+        for (const v of seq.verticals)
+          for (const b of v.blocks) {
+            if (b.type === "html") {
+              let h = b.html;
+              for (const [o, n] of renames) {
+                if (!h.includes(`asset://${o}`)) continue;
+                h = h.replace(new RegExp(`asset:\\/\\/${esc(o)}(?=["'\\s),<]|$)`, "g"), `asset://${n}`);
+              }
+              b.html = h;
+            } else if (b.type === "video") {
+              b.transcripts = b.transcripts.map((t) => (lookup.has(t.srtFile) ? { ...t, srtFile: lookup.get(t.srtFile)! } : t));
+            }
+          }
+    if (nextCourse.about.courseImageName && lookup.has(nextCourse.about.courseImageName))
+      nextCourse.about.courseImageName = lookup.get(nextCourse.about.courseImageName)!;
+    setCourse(nextCourse);
+
+    const map = new Map(assets);
+    for (const [o, n] of renames) {
+      const af = map.get(o);
+      if (!af) continue;
+      map.delete(o);
+      const blob = af.blob;
+      const renamed = blob instanceof File ? new File([blob], n, { type: blob.type }) : blob;
+      map.set(n, { name: n, size: af.size, blob: renamed });
+    }
+    await handleAssetsChange(map);
+    setTopErr(null);
+  };
+
   const insertBulk = (problems: ProblemBlock[]) => {
     if (!bulkTarget) return;
     const next = structuredClone(course);
@@ -235,6 +333,8 @@ function PageInner() {
   return (
     <div className="flex h-screen flex-col bg-default-50">
       <Navbar
+        hideModeNav
+        showBackToCourses
         brand={
           <div className="flex max-w-xs items-center gap-2 truncate text-sm font-medium text-default-700">
             <span className="truncate">{course.course.displayName}</span>
@@ -263,35 +363,40 @@ function PageInner() {
         }
         right={
           <>
-            <Button variant="outline" size="sm" onClick={() => setInfoOpen(true)}>
-              <Info size={14} className="me-1.5" /> Course Info
-            </Button>
+            {courseId && (
+              <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
+                <Share2 size={14} className="me-1.5" /> แชร์
+              </Button>
+            )}
 
-            <Button variant="outline" size="sm" onClick={handleSave} title="ดาวน์โหลด course JSON (ข้อมูลถูก auto-save ใน DB แล้ว)">
-              <Save size={14} className="me-1.5" />
-              {linkedFile ? "Save" : "Download JSON"}
-            </Button>
+            <ExportButton course={course} assets={assets} disabled={hasErrors} />
 
+            {/* เพิ่มเติม — รวม action รอง */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" title="ทับเนื้อหาคอร์สนี้ด้วยข้อมูลจากไฟล์">
-                  <Replace size={14} className="me-1.5" /> Replace
-                  <ChevronDown size={12} className="ml-1 opacity-60" />
+                <Button variant="outline" size="sm" title="เพิ่มเติม" aria-label="เพิ่มเติม" className="!px-2">
+                  <MoreHorizontal size={16} />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => setInfoOpen(true)}>
+                  <Info size={13} className="me-2 text-default-500" /> ข้อมูลคอร์ส (Course Info)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSave}>
+                  <Save size={13} className="me-2 text-default-500" />
+                  {linkedFile ? "บันทึกลงไฟล์ที่ผูก" : "ดาวน์โหลด JSON"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => xmlRef.current?.open()}>
-                  <FileCode2 size={13} className="me-2 text-default-500" /> Replace with XML
+                  <FileCode2 size={13} className="me-2 text-default-500" /> Import XML
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => olxRef.current?.open()}>
-                  <PackageOpen size={13} className="me-2 text-default-500" /> Replace with OLX (.tar.gz)
+                  <PackageOpen size={13} className="me-2 text-default-500" /> Import OLX (.tar.gz)
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
             <Separator orientation="vertical" className="h-6" />
-
-            <ExportButton course={course} assets={assets} disabled={hasErrors} />
 
             <button
               type="button"
@@ -416,33 +521,49 @@ function PageInner() {
                 <CardTitle className="text-sm font-semibold uppercase tracking-wider text-default-500">
                   รูปภาพ / ไฟล์
                 </CardTitle>
-                {(() => {
-                  const referenced = courseService.collectAssetRefs(course);
-                  const orphans = Array.from(assets.keys()).filter((k) => !referenced.has(k));
-                  if (orphans.length === 0) return null;
-                  return (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="!h-6 !px-2 !text-2xs text-default-500 hover:text-destructive"
-                      title={`ลบ asset ที่ไม่ได้ใช้แล้ว (${orphans.length} ไฟล์)`}
-                      onClick={async () => {
-                        if (!courseId) return;
-                        if (!confirm(`ลบ ${orphans.length} asset ที่ไม่มี block อ้างถึง?\n\n${orphans.slice(0, 8).join("\n")}${orphans.length > 8 ? `\n…และอีก ${orphans.length - 8}` : ""}`)) return;
-                        await courseService.purgeOrphanAssets(courseId, course);
-                        // Reload assets state from latest DB-truth
-                        const next = new Map(assets);
-                        for (const o of orphans) next.delete(o);
-                        await handleAssetsChange(next);
-                      }}
-                    >
-                      ล้าง orphan ({orphans.length})
-                    </Button>
-                  );
-                })()}
+                <div className="flex items-center gap-1">
+                  {(() => {
+                    const unsafe = Array.from(assets.keys()).filter((k) => !/^[A-Za-z0-9._\-/]+$/.test(k));
+                    if (unsafe.length === 0) return null;
+                    return (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="!h-6 !px-2 !text-2xs text-default-500 hover:text-primary"
+                        title={`เปลี่ยนชื่อไฟล์ที่ไม่ใช่ ASCII (${unsafe.length} ไฟล์) ให้เป็นอังกฤษ + อัพเดตลิงก์อัตโนมัติ`}
+                        onClick={fixAllAssetNames}
+                      >
+                        แก้ชื่อไฟล์ ({unsafe.length})
+                      </Button>
+                    );
+                  })()}
+                  {(() => {
+                    const referenced = courseService.collectAssetRefs(course);
+                    const orphans = Array.from(assets.keys()).filter((k) => !referenced.has(k));
+                    if (orphans.length === 0) return null;
+                    return (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="!h-6 !px-2 !text-2xs text-default-500 hover:text-destructive"
+                        title={`ลบ asset ที่ไม่ได้ใช้แล้ว (${orphans.length} ไฟล์)`}
+                        onClick={async () => {
+                          if (!courseId) return;
+                          if (!confirm(`ลบ ${orphans.length} asset ที่ไม่มี block อ้างถึง?\n\n${orphans.slice(0, 8).join("\n")}${orphans.length > 8 ? `\n…และอีก ${orphans.length - 8}` : ""}`)) return;
+                          await courseService.purgeOrphanAssets(courseId, course);
+                          const next = new Map(assets);
+                          for (const o of orphans) next.delete(o);
+                          await handleAssetsChange(next);
+                        }}
+                      >
+                        ล้าง orphan ({orphans.length})
+                      </Button>
+                    );
+                  })()}
+                </div>
               </CardHeader>
               <CardContent className="min-h-0 flex-1 overflow-auto p-3">
-                <AssetUploader assets={assets} onChange={handleAssetsChange} />
+                <AssetUploader assets={assets} onChange={handleAssetsChange} onRename={renameAsset} />
               </CardContent>
             </Card>
             <Card className="flex max-h-[40%] shrink-0 flex-col overflow-hidden">
@@ -492,7 +613,18 @@ function PageInner() {
         onClose={() => setInfoOpen(false)}
         assets={assets}
         onAssetsChange={handleAssetsChange}
+        onAddAsset={addAsset}
       />
+
+      {courseId && (
+        <ShareDialog
+          resourceType="course"
+          resourceId={courseId}
+          resourceTitle={course.course.displayName}
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+        />
+      )}
 
       <CleanupDialog
         open={cleanupOpen}
