@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Template นำเข้า Problem หลายข้อ (Bulk Import → แท็บ XML) สำหรับ U-CourseBuilder
+
+  โครงสร้าง:
+    - ครอบทุกข้อด้วย <problems> ... </problems>
+    - แต่ละข้อ = <problem> พร้อม attribute:
+        displayName   ชื่อข้อ
+        problemType   multiplechoice | checkbox | dropdown | numerical | text
+        maxAttempts   จำนวนครั้งที่ตอบได้ (ไม่บังคับ)
+        showAnswer    always | answered | attempted | closed | finished
+                      | past_due | correct_or_past_due | never   (ไม่บังคับ)
+        weight        น้ำหนักคะแนน (ไม่บังคับ)
+        shuffle       "true" = สลับตัวเลือก (เฉพาะ multiplechoice/checkbox)
+        matchMode     เฉพาะ text: exact | ci | regex | ci-regex
+    - <question> ใส่ HTML ได้ ครอบด้วย <![CDATA[ ... ]]>
+    - <explanation> คำอธิบายเฉลย (ไม่บังคับ) ใส่ HTML ได้เช่นกัน
+
+  ข้อแบบเลือกตอบ (multiplechoice / checkbox / dropdown):
+    <choices>
+      <choice correct="true|false" hint="คำใบ้ (ไม่บังคับ)">ข้อความตัวเลือก</choice>
+    </choices>
+    * ต้องมีตัวเลือก ≥ 2 และมี correct="true" อย่างน้อย 1
+    * checkbox ถูกได้หลายข้อ · multiplechoice/dropdown ถูกได้ข้อเดียว
+
+  ข้อแบบตัวเลข (numerical):
+    <numericalAnswer tolerance="0.01">ค่าที่ถูก</numericalAnswer>
+
+  ข้อแบบข้อความ (text):
+    <textAnswers>
+      <answer>คำตอบที่ยอมรับ</answer>   (ใส่ได้หลาย <answer>)
+    </textAnswers>
+-->
+<problems>
+
+  <!-- 1) เลือกตอบข้อเดียว (multiple choice) -->
+  <problem displayName="ข้อ 1 — Backward Design" problemType="multiplechoice" maxAttempts="2" showAnswer="attempted">
+    <question><![CDATA[<p>ขั้นแรกของการออกแบบย้อนกลับ (Backward Design) คือข้อใด?</p>]]></question>
+    <choices>
+      <choice correct="false">เลือกสื่อการสอน</choice>
+      <choice correct="true" hint="ถูกต้อง! เริ่มจากผลลัพธ์ที่ต้องการก่อน">กำหนดผลลัพธ์การเรียนรู้ที่คาดหวัง</choice>
+      <choice correct="false">วางแผนกิจกรรม</choice>
+      <choice correct="false">สร้างข้อสอบ</choice>
+    </choices>
+    <explanation><![CDATA[<p>Backward Design เริ่มจากผลลัพธ์การเรียนรู้ → หลักฐาน → กิจกรรม</p>]]></explanation>
+  </problem>
+
+  <!-- 2) เลือกได้หลายข้อ (checkbox) -->
+  <problem displayName="ข้อ 2 — Constructive Alignment" problemType="checkbox" shuffle="true">
+    <question><![CDATA[<p>ข้อใดเป็นองค์ประกอบของ Constructive Alignment? (เลือกได้มากกว่า 1)</p>]]></question>
+    <choices>
+      <choice correct="true">Learning Outcomes</choice>
+      <choice correct="true">Teaching &amp; Learning Activities</choice>
+      <choice correct="true">Assessment Tasks</choice>
+      <choice correct="false">ค่าลงทะเบียน</choice>
+    </choices>
+  </problem>
+
+  <!-- 3) เมนูดรอปดาวน์ (dropdown) -->
+  <problem displayName="ข้อ 3 — ดรอปดาวน์" problemType="dropdown" maxAttempts="1">
+    <question><![CDATA[<p>เมืองหลวงของประเทศไทยคือข้อใด?</p>]]></question>
+    <choices>
+      <choice correct="false">เชียงใหม่</choice>
+      <choice correct="true">กรุงเทพมหานคร</choice>
+      <choice correct="false">ภูเก็ต</choice>
+      <choice correct="false">ขอนแก่น</choice>
+    </choices>
+  </problem>
+
+  <!-- 4) ตอบเป็นตัวเลข (numerical) — tolerance = ค่าคลาดเคลื่อนที่ยอมรับ -->
+  <problem displayName="ข้อ 4 — ตัวเลข" problemType="numerical">
+    <question><![CDATA[<p>ค่าประมาณของ π (ทศนิยม 2 ตำแหน่ง) คือเท่าใด?</p>]]></question>
+    <numericalAnswer tolerance="0.01">3.14</numericalAnswer>
+  </problem>
+
+  <!-- 5) ตอบเป็นข้อความ (text) — matchMode="ci" = ไม่สนตัวพิมพ์เล็ก/ใหญ่ -->
+  <problem displayName="ข้อ 5 — ข้อความ" problemType="text" matchMode="ci">
+    <question><![CDATA[<p>อักษรย่อของ Learning Management System คือ?</p>]]></question>
+    <textAnswers>
+      <answer>LMS</answer>
+    </textAnswers>
+  </problem>
+
+</problems>

@@ -1,18 +1,20 @@
 [
   {
-    "displayName": "ข้อ 1 — เลือกตอบข้อเดียว",
+    "displayName": "ข้อ 1 — เลือกตอบข้อเดียว (multiplechoice)",
     "problemType": "multiplechoice",
     "question": "<p>ขั้นแรกของการออกแบบย้อนกลับ (Backward Design) คือข้อใด?</p>",
     "choices": [
       { "text": "เลือกสื่อการสอน", "correct": false },
-      { "text": "กำหนดผลลัพธ์การเรียนรู้ที่คาดหวัง", "correct": true },
+      { "text": "กำหนดผลลัพธ์การเรียนรู้ที่คาดหวัง", "correct": true, "hint": "ถูกต้อง! เริ่มจากผลลัพธ์ก่อนเสมอ" },
       { "text": "วางแผนกิจกรรม", "correct": false },
       { "text": "สร้างข้อสอบ", "correct": false }
     ],
-    "maxAttempts": 2
+    "maxAttempts": 2,
+    "showAnswer": "attempted",
+    "explanation": "<p>Backward Design เริ่มจากผลลัพธ์การเรียนรู้ → หลักฐาน → กิจกรรม</p>"
   },
   {
-    "displayName": "ข้อ 2 — เลือกได้หลายข้อ",
+    "displayName": "ข้อ 2 — เลือกได้หลายข้อ (checkbox)",
     "problemType": "checkbox",
     "question": "<p>ข้อใดเป็นองค์ประกอบของ Constructive Alignment? (เลือกได้มากกว่า 1)</p>",
     "choices": [
@@ -21,18 +23,28 @@
       { "text": "Assessment Tasks", "correct": true },
       { "text": "ค่าลงทะเบียน", "correct": false }
     ],
-    "maxAttempts": 2
+    "maxAttempts": 2,
+    "shuffle": true
   },
   {
-    "displayName": "ข้อ 3 — เมนูดรอปดาวน์",
+    "displayName": "ข้อ 3 — เมนูดรอปดาวน์ (dropdown)",
     "problemType": "dropdown",
     "question": "<p>เมืองหลวงของประเทศไทยคือข้อใด?</p>",
-    "choices": [
-      { "text": "เชียงใหม่", "correct": false },
-      { "text": "กรุงเทพมหานคร", "correct": true },
-      { "text": "ภูเก็ต", "correct": false },
-      { "text": "ขอนแก่น", "correct": false }
-    ],
+    "choices": ["เชียงใหม่", "กรุงเทพมหานคร*", "ภูเก็ต", "ขอนแก่น"],
     "maxAttempts": 1
+  },
+  {
+    "displayName": "ข้อ 4 — ตอบเป็นตัวเลข (numerical)",
+    "problemType": "numerical",
+    "question": "<p>ค่าประมาณของ π (ทศนิยม 2 ตำแหน่ง) คือเท่าใด?</p>",
+    "numericalAnswer": 3.14,
+    "numericalTolerance": "0.01"
+  },
+  {
+    "displayName": "ข้อ 5 — ตอบเป็นข้อความ (text)",
+    "problemType": "text",
+    "question": "<p>อักษรย่อของ Learning Management System คือ?</p>",
+    "textAnswers": ["LMS"],
+    "textMatchMode": "ci"
   }
 ]

@@ -14,22 +14,39 @@
 **วิธีใช้:** ในหน้าแก้คอร์ส → ปุ่ม **"Markdown"** → วางเนื้อหาไฟล์นี้ → ดูพรีวิว → Import
 (เติมเนื้อหา/วิดีโอ/ข้อสอบในแต่ละ Unit ภายหลังในตัวแก้ไข)
 
-## 2) ชุดข้อสอบ — `quiz-template.csv` หรือ `quiz-template.json`
-นำเข้า problem หลายข้อพร้อมกันเข้าไปใน Unit
+## 2) ชุดข้อสอบ — `quiz-template.csv` · `quiz-template.json` · `quiz-template.xml`
+นำเข้า problem หลายข้อพร้อมกันเข้าไปใน Unit (คอร์ส) หรือ Library
 
-**วิธีใช้:** เลือก Unit ในคอร์ส → ปุ่ม **"Bulk Import"** → เลือกแท็บ CSV หรือ JSON → อัปโหลด/วางไฟล์ → Import
+**วิธีใช้:** เลือก Unit ในคอร์ส (หรือหน้าแก้ Library) → ปุ่ม **"Bulk Import"** → เลือกแท็บ CSV / JSON / XML → อัปโหลด/วางไฟล์ → Import
+(กดปุ่ม **"ใส่ตัวอย่าง"** ในหน้าต่างเพื่อเติม template ตั้งต้นได้)
 
-### รูปแบบ CSV
+### ชนิดข้อสอบ (problemType) ที่รองรับ
+| ชนิด | ความหมาย | CSV | JSON | XML |
+|------|----------|:---:|:----:|:---:|
+| `multiplechoice` | เลือกตอบข้อเดียว | ✅ | ✅ | ✅ |
+| `checkbox` | เลือกได้หลายข้อ | ✅ | ✅ | ✅ |
+| `dropdown` | เมนูดรอปดาวน์ | ✅ | ✅ | ✅ |
+| `numerical` | ตอบเป็นตัวเลข | — | ✅ | ✅ |
+| `text` | ตอบเป็นข้อความ | — | ✅ | ✅ |
+
+> ชนิด `numerical` / `text` ต้องใช้ **JSON หรือ XML** (CSV รองรับเฉพาะแบบเลือกตอบ)
+
+### รูปแบบ CSV — `quiz-template.csv`
 คอลัมน์: `displayName, problemType, question, choices, maxAttempts`
 - `choices` คั่นแต่ละตัวเลือกด้วย `|` และใส่ `*` ต่อท้ายข้อที่ถูก
-  เช่น `3|4*|5` = ข้อ "4" ถูก
-- multiplechoice/dropdown = ถูกได้ข้อเดียว · checkbox = ถูกได้หลายข้อ
+  เช่น `3|4*|5` = ข้อ "4" ถูก · checkbox ใส่ `*` ได้หลายข้อ
 
-### รูปแบบ JSON
-อาเรย์ของ object: `{ displayName, problemType, question, choices: [{text, correct}], maxAttempts }`
-- `question` ใส่ HTML ได้ (เช่น `<p>...</p>`, `<strong>`, `<em>`)
+### รูปแบบ JSON — `quiz-template.json`
+อาเรย์ของ object แต่ละข้อ:
+- เลือกตอบ: `choices: [{ text, correct, hint? }]` — หรือย่อเป็นสตริง `"4*"` (ใส่ `*` = ถูก)
+- ตัวเลข: `numericalAnswer` (ตัวเลข) + `numericalTolerance` (เช่น `"0.01"` หรือ `"2%"`)
+- ข้อความ: `textAnswers: [...]` + `textMatchMode`: `exact | ci | regex | ci-regex`
+- ฟิลด์เสริมทุกชนิด: `maxAttempts`, `showAnswer`, `explanation`, `weight`, `shuffle`
+- `question` / `explanation` ใส่ HTML ได้ (เช่น `<p>...</p>`, `<strong>`, `<em>`)
 
-### ชนิดข้อสอบ (problemType) ที่ template นี้ครอบคลุม
-`multiplechoice` · `checkbox` · `dropdown` (แบบเลือกตอบ)
-
-> ชนิด `numerical` (ตอบเป็นตัวเลข) และ `text` (ตอบเป็นข้อความ) แนะนำให้สร้าง/แก้ในตัวแก้ไข Problem โดยตรง
+### รูปแบบ XML — `quiz-template.xml`
+ครอบทุกข้อด้วย `<problems>`; แต่ละข้อ `<problem problemType="...">` มีคำอธิบายรายฟิลด์อยู่ในหัวไฟล์
+- เลือกตอบ: `<choices><choice correct="true" hint="...">…</choice></choices>`
+- ตัวเลข: `<numericalAnswer tolerance="0.01">3.14</numericalAnswer>`
+- ข้อความ: `<textAnswers><answer>…</answer></textAnswers>` (`matchMode` เป็น attribute ของ `<problem>`)
+- เนื้อหา HTML ใน `<question>` / `<explanation>` ครอบด้วย `<![CDATA[ ... ]]>`
