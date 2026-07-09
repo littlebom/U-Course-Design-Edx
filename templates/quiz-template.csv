@@ -1,0 +1,4 @@
+displayName,problemType,question,choices,maxAttempts
+"ข้อ 1 — เลือกตอบข้อเดียว","multiplechoice","ขั้นแรกของการออกแบบย้อนกลับ (Backward Design) คือข้อใด?","เลือกสื่อการสอน|กำหนดผลลัพธ์การเรียนรู้*|วางแผนกิจกรรม|สร้างข้อสอบ",2
+"ข้อ 2 — เลือกได้หลายข้อ","checkbox","ข้อใดเป็นองค์ประกอบของ Constructive Alignment? (เลือกได้มากกว่า 1)","Learning Outcomes*|Teaching Activities*|Assessment Tasks*|ค่าลงทะเบียน",2
+"ข้อ 3 — เมนูดรอปดาวน์","dropdown","เมืองหลวงของประเทศไทยคือข้อใด?","เชียงใหม่|กรุงเทพมหานคร*|ภูเก็ต|ขอนแก่น",1

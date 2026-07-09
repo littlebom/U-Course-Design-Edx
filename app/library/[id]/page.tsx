@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Library as LibIcon, Download, Info, FolderTree, FolderOpen, ImageIcon, Share2, MoreHorizontal } from "lucide-react";
+import { Library as LibIcon, Download, Info, FolderTree, FolderOpen, ImageIcon, Share2, MoreHorizontal, Upload, Combine } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CollectionEditor } from "@/components/CollectionEditor";
@@ -19,10 +19,13 @@ import type {
   Library,
   LibraryContainer,
   LibraryXBlock,
+  LibraryEntity,
   ContainerKind,
 } from "@/lib/library/schema";
 import { isContainer } from "@/lib/library/schema";
 import { downloadLibraryZip } from "@/lib/library/export";
+import { parseLibraryV1Tar } from "@/lib/library/import-v1";
+import { uuidV4 } from "@/lib/uuid";
 import { checkLibraryReadiness } from "@/lib/library/readiness";
 import { ReadinessPanel } from "@/components/ReadinessPanel";
 import { ShareDialog } from "@/components/ShareDialog";
@@ -31,7 +34,9 @@ import { AddEntityMenu, type AddEntityKind } from "@/components/library/AddEntit
 import { ContainerEditor } from "@/components/library/ContainerEditor";
 import { XBlockEditor } from "@/components/library/XBlockEditor";
 import { entityTitle } from "@/components/library/entityTitle";
-import { makeLibraryEntity } from "@/components/library/createEntity";
+import { makeLibraryEntity, makeProblemEntity } from "@/components/library/createEntity";
+import { BulkProblemImport } from "@/components/BulkProblemImport";
+import type { ProblemBlock } from "@/lib/schema";
 
 export default function LibraryEditorPage() {
   const router = useRouter();
@@ -44,6 +49,8 @@ export default function LibraryEditorPage() {
   const [hydrated, setHydrated] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const v1MergeRef = useRef<HTMLInputElement>(null);
   const [leftTab, setLeftTab] = useState<"entities" | "collections" | "assets">("entities");
 
   // Race-safe asset CRUD via shared hook.
@@ -131,6 +138,40 @@ export default function LibraryEditorPage() {
     }
   };
 
+  // Import one or more Library v1 files and MERGE their entities/assets into
+  // this library (e.g. combine midterm + final into one library).
+  const handleImportV1Merge = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !library) return;
+    try {
+      const existingKeys = new Set(library.entities.map((e) => e.key));
+      const newEntities: LibraryEntity[] = [];
+      const mergedAssets = new Map(assets);
+      const allWarnings: string[] = [];
+      for (const file of Array.from(files)) {
+        const buf = await file.arrayBuffer();
+        const { library: lib, assets: aMap, warnings } = await parseLibraryV1Tar(buf, { wrapMode: "flat" });
+        allWarnings.push(...warnings);
+        for (let e of lib.entities) {
+          if (existingKeys.has(e.key) && e.kind === "xblock") {
+            const uuid = uuidV4();
+            e = { ...e, uuid, key: `xblock.v1:${e.xblockType}:${uuid}` };
+          }
+          existingKeys.add(e.key);
+          newEntities.push(e);
+        }
+        for (const [k, f] of aMap) if (!mergedAssets.has(k)) mergedAssets.set(k, f);
+      }
+      if (newEntities.length) update((l) => { l.entities.push(...newEntities); });
+      await applyAssets(mergedAssets);
+      alert(
+        `รวมสำเร็จ: เพิ่ม ${newEntities.length} รายการ จาก ${files.length} ไฟล์` +
+          (allWarnings.length ? `\n\n⚠️ คำเตือน ${allWarnings.length} รายการ` : ""),
+      );
+    } catch (e) {
+      setErr(`Import v1 (รวม) ล้มเหลว: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+
   if (!library || !libraryId) {
     return <div className="grid h-screen place-items-center text-default-400">กำลังโหลด…</div>;
   }
@@ -158,6 +199,20 @@ export default function LibraryEditorPage() {
         left={<div className="ml-2"><SaveIndicator status={saveStatus} savedAt={savedAt} /></div>}
         right={
           <>
+            <input
+              ref={v1MergeRef}
+              type="file"
+              multiple
+              accept=".zip,.tar.gz,.tgz,application/zip,application/gzip,application/x-gzip"
+              className="hidden"
+              onChange={(e) => { handleImportV1Merge(e.target.files); e.target.value = ""; }}
+            />
+            <Button variant="outline" size="sm" onClick={() => v1MergeRef.current?.click()} title="นำเข้า Library v1 หลายไฟล์แล้วรวมเข้าด้วยกัน (เช่น กลางภาค + ปลายภาค)">
+              <Combine size={14} className="me-1.5" /> รวม v1
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)} title="นำเข้าข้อสอบหลายข้อ (JSON / CSV / XML)">
+              <Upload size={14} className="me-1.5" /> Bulk Import
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
               <Share2 size={14} className="me-1.5" /> แชร์
             </Button>
@@ -313,6 +368,18 @@ export default function LibraryEditorPage() {
           resourceTitle={library.learningPackage.title}
           open={shareOpen}
           onOpenChange={setShareOpen}
+        />
+      )}
+
+      {bulkOpen && (
+        <BulkProblemImport
+          onImport={(problems: ProblemBlock[]) => {
+            update((l) => {
+              for (const p of problems) l.entities.push(makeProblemEntity(p));
+            });
+            setBulkOpen(false);
+          }}
+          onClose={() => setBulkOpen(false)}
         />
       )}
     </div>

@@ -1,6 +1,23 @@
 import { uuidV4 } from "@/lib/uuid";
 import type { ContainerKind, LibraryEntity } from "@/lib/library/schema";
+import type { ProblemBlock } from "@/lib/schema";
 import type { AddEntityKind } from "./AddEntityMenu";
+
+// Wrap a parsed ProblemBlock (e.g. from Bulk Import) into a library xblock entity.
+export function makeProblemEntity(block: ProblemBlock): LibraryEntity {
+  const uuid = uuidV4();
+  return {
+    kind: "xblock",
+    key: `xblock.v1:problem:${uuid}`,
+    title: block.displayName || "Problem",
+    xblockType: "problem",
+    uuid,
+    draftVersion: 1,
+    publishedVersion: 1,
+    canStandAlone: true,
+    block,
+  };
+}
 
 // Factory: produce a fresh entity for the given add-menu choice. Keeps the
 // editor page free of inline switch-on-kind clutter.

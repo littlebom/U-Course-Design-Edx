@@ -1,0 +1,38 @@
+[
+  {
+    "displayName": "ข้อ 1 — เลือกตอบข้อเดียว",
+    "problemType": "multiplechoice",
+    "question": "<p>ขั้นแรกของการออกแบบย้อนกลับ (Backward Design) คือข้อใด?</p>",
+    "choices": [
+      { "text": "เลือกสื่อการสอน", "correct": false },
+      { "text": "กำหนดผลลัพธ์การเรียนรู้ที่คาดหวัง", "correct": true },
+      { "text": "วางแผนกิจกรรม", "correct": false },
+      { "text": "สร้างข้อสอบ", "correct": false }
+    ],
+    "maxAttempts": 2
+  },
+  {
+    "displayName": "ข้อ 2 — เลือกได้หลายข้อ",
+    "problemType": "checkbox",
+    "question": "<p>ข้อใดเป็นองค์ประกอบของ Constructive Alignment? (เลือกได้มากกว่า 1)</p>",
+    "choices": [
+      { "text": "Learning Outcomes", "correct": true },
+      { "text": "Teaching & Learning Activities", "correct": true },
+      { "text": "Assessment Tasks", "correct": true },
+      { "text": "ค่าลงทะเบียน", "correct": false }
+    ],
+    "maxAttempts": 2
+  },
+  {
+    "displayName": "ข้อ 3 — เมนูดรอปดาวน์",
+    "problemType": "dropdown",
+    "question": "<p>เมืองหลวงของประเทศไทยคือข้อใด?</p>",
+    "choices": [
+      { "text": "เชียงใหม่", "correct": false },
+      { "text": "กรุงเทพมหานคร", "correct": true },
+      { "text": "ภูเก็ต", "correct": false },
+      { "text": "ขอนแก่น", "correct": false }
+    ],
+    "maxAttempts": 1
+  }
+]
