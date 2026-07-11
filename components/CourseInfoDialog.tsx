@@ -44,6 +44,11 @@ export function CourseInfoDialog({ open, course, onChange, onClose, assets, onAs
     : courseImageAsset
       ? URL.createObjectURL(courseImageAsset.blob)
       : null;
+  // courseImageName is set to a local asset name, but that asset isn't present —
+  // a broken reference (e.g. after importing a course whose image wasn't bundled).
+  // Surface it so the user can clear it; otherwise it silently blocks export.
+  const hasDanglingImage =
+    !!a.courseImageName && !isAssetUrl(a.courseImageName) && !courseImageAsset;
 
   const handleImageUpload = (file: File) => {
     const next = new Map(assets);
@@ -229,6 +234,26 @@ export function CourseInfoDialog({ open, course, onChange, onClose, assets, onAs
                   >
                     <X size={14} />
                   </button>
+                </div>
+              )}
+
+              {/* Broken/dangling reference — allow clearing it */}
+              {hasDanglingImage && (
+                <div className="flex items-center justify-between gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive ring-1 ring-destructive/20">
+                  <span className="min-w-0 break-all">
+                    อ้างถึงรูปปกที่ไม่มีไฟล์จริง:{" "}
+                    <code className="font-mono">{a.courseImageName}</code>
+                    <br />
+                    ทำให้ export ไม่ได้ — อัปโหลดรูปใหม่ หรือกด &quot;ล้าง&quot;
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0 text-destructive"
+                    onClick={handleImageRemove}
+                  >
+                    <X size={13} className="me-1" /> ล้าง
+                  </Button>
                 </div>
               )}
 

@@ -36,6 +36,19 @@ export function buildOlxFiles(
   const allRefs = new Set<string>();
   const chapterIds: string[] = [];
 
+  // A course-card image pointing at a missing/unknown asset is cosmetic and must
+  // never block export — edX treats the about image as optional. Drop a dangling
+  // reference up-front so course.xml / policy / about files stay self-consistent
+  // (common after importing a course whose static image wasn't bundled). Assets
+  // referenced by actual content/HTML are still required and reported if missing.
+  {
+    const img = course.about.courseImageName;
+    const imgIsAssetUrl = img.startsWith("/asset-v1:") || img.startsWith("asset-v1:");
+    if (img && !imgIsAssetUrl && !assets.has(img)) {
+      course = { ...course, about: { ...course.about, courseImageName: "" } };
+    }
+  }
+
   for (const ch of course.chapters) {
     const seqIds: string[] = [];
     for (const seq of ch.sequentials) {

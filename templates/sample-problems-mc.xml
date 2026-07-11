@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ตัวอย่างข้อสอบ Multiple Choice จำนวน 5 ข้อ สำหรับนำเข้าผ่าน
+  Bulk Import → แท็บ XML (หน้าแก้ Library หรือ Unit ในคอร์ส)
+  ทุกข้อเป็นแบบเลือกตอบข้อเดียว (multiplechoice) มีคำตอบถูก 1 ข้อ
+-->
+<problems>
+
+  <problem displayName="ข้อ 1 — Backward Design" problemType="multiplechoice" maxAttempts="2" showAnswer="attempted">
+    <question><![CDATA[<p>ขั้นแรกของการออกแบบหลักสูตรแบบย้อนกลับ (Backward Design) คือข้อใด?</p>]]></question>
+    <choices>
+      <choice correct="false">เลือกสื่อและกิจกรรมการสอน</choice>
+      <choice correct="true" hint="ถูกต้อง! เริ่มจากผลลัพธ์ที่ต้องการก่อนเสมอ">กำหนดผลลัพธ์การเรียนรู้ที่คาดหวัง</choice>
+      <choice correct="false">ออกแบบข้อสอบวัดผล</choice>
+      <choice correct="false">ประเมินผลผู้เรียน</choice>
+    </choices>
+    <explanation><![CDATA[<p>Backward Design มี 3 ขั้น: (1) กำหนดผลลัพธ์การเรียนรู้ → (2) กำหนดหลักฐาน/การวัดผล → (3) ออกแบบกิจกรรมการเรียนรู้</p>]]></explanation>
+  </problem>
+
+  <problem displayName="ข้อ 2 — Bloom's Taxonomy" problemType="multiplechoice" maxAttempts="2">
+    <question><![CDATA[<p>ตาม Bloom's Taxonomy (ฉบับปรับปรุง) ระดับพุทธิพิสัยที่สูงที่สุดคือข้อใด?</p>]]></question>
+    <choices>
+      <choice correct="false">จดจำ (Remember)</choice>
+      <choice correct="false">เข้าใจ (Understand)</choice>
+      <choice correct="false">วิเคราะห์ (Analyze)</choice>
+      <choice correct="true" hint="ถูกต้อง! Create คือการสร้างสรรค์สิ่งใหม่ อยู่ระดับสูงสุด">สร้างสรรค์ (Create)</choice>
+    </choices>
+    <explanation><![CDATA[<p>ลำดับจากล่างขึ้นบน: Remember → Understand → Apply → Analyze → Evaluate → Create</p>]]></explanation>
+  </problem>
+
+  <problem displayName="ข้อ 3 — Formative Assessment" problemType="multiplechoice" maxAttempts="2">
+    <question><![CDATA[<p>ข้อใดคือลักษณะสำคัญของการประเมินเพื่อพัฒนา (Formative Assessment)?</p>]]></question>
+    <choices>
+      <choice correct="true" hint="ถูกต้อง! เน้นให้ข้อมูลป้อนกลับระหว่างเรียนเพื่อพัฒนา">ให้ข้อมูลป้อนกลับระหว่างการเรียนเพื่อปรับปรุงการเรียนรู้</choice>
+      <choice correct="false">ตัดสินเกรดปลายภาคเพียงอย่างเดียว</choice>
+      <choice correct="false">จัดสอบครั้งเดียวเมื่อจบหลักสูตร</choice>
+      <choice correct="false">ใช้เปรียบเทียบจัดอันดับผู้เรียน</choice>
+    </choices>
+  </problem>
+
+  <problem displayName="ข้อ 4 — Constructive Alignment" problemType="multiplechoice" maxAttempts="2">
+    <question><![CDATA[<p>หลักการ Constructive Alignment เน้นให้สิ่งใดสอดคล้องกัน?</p>]]></question>
+    <choices>
+      <choice correct="false">งบประมาณ สื่อ และสถานที่</choice>
+      <choice correct="true" hint="ถูกต้อง! ทั้งสามส่วนต้องสอดคล้องไปในทิศทางเดียวกัน">ผลลัพธ์การเรียนรู้ กิจกรรมการเรียน และการวัดผล</choice>
+      <choice correct="false">จำนวนผู้เรียน ครูผู้สอน และห้องเรียน</choice>
+      <choice correct="false">เนื้อหา ตำราเรียน และแบบฝึกหัด</choice>
+    </choices>
+  </problem>
+
+  <problem displayName="ข้อ 5 — สื่อการเรียนออนไลน์" problemType="multiplechoice" maxAttempts="2">
+    <question><![CDATA[<p>ในการออกแบบวิดีโอการสอนออนไลน์ (MOOC) ความยาวที่เหมาะสมต่อคลิปโดยทั่วไปคือข้อใด?</p>]]></question>
+    <choices>
+      <choice correct="false">45–60 นาที</choice>
+      <choice correct="false">30–45 นาที</choice>
+      <choice correct="true" hint="ถูกต้อง! คลิปสั้น 6–12 นาที ช่วยรักษาสมาธิผู้เรียนได้ดีกว่า">6–12 นาที</choice>
+      <choice correct="false">ยาวเท่าใดก็ได้ ไม่มีผลต่อการเรียนรู้</choice>
+    </choices>
+    <explanation><![CDATA[<p>งานวิจัยด้าน MOOC พบว่าคลิปสั้น (ต่ำกว่า ~12 นาที) มี engagement สูงกว่าคลิปยาว</p>]]></explanation>
+  </problem>
+
+</problems>
