@@ -36,6 +36,9 @@ export function BlockEditor({ course, path, onChange, assets, onAddAsset }: Prop
           flows through the block registry's Editor component. */}
       {block.type === "html" ? (
         <HtmlField
+          // RichEditor is uncontrolled (initialValue) — remount it when a different
+          // block is selected so its content reloads instead of staying stale.
+          key={`${path.ci}.${path.si}.${path.vi}.${path.bi}`}
           html={block.html}
           onChange={(v) => update((b) => ((b as Extract<Block, { type: "html" }>).html = v))}
           assets={assets}

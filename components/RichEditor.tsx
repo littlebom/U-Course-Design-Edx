@@ -1,7 +1,7 @@
 "use client";
 
 import { Editor } from "@tinymce/tinymce-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { Editor as TinyMCEEditor } from "tinymce";
 import type { AssetFile } from "./AssetUploader";
 
@@ -18,33 +18,45 @@ type BlobInfo = {
   filename?: () => string;
 };
 
+const ASSET_RE = /asset:\/\/([A-Za-z0-9_.\-/]+)/g;
+
 export function RichEditor({ value, onChange, height = 420, assets, onAddAsset }: Props) {
   const editorRef = useRef<TinyMCEEditor | null>(null);
-  // blob URL -> canonical asset filename (kept across renders for handleChange lookups)
+  // blob URL -> canonical asset filename (for mapping edited HTML back to asset://)
   const blobToName = useRef<Map<string, string>>(new Map());
-  const [displayHtml, setDisplayHtml] = useState("");
+  const createdUrls = useRef<string[]>([]);
 
-  // Build display HTML in effect: replace asset://name with fresh blob URLs.
-  // Track URLs to revoke on next pass / unmount.
-  useEffect(() => {
-    const map = blobToName.current;
-    const created: string[] = [];
-    const next = value.replace(/asset:\/\/([A-Za-z0-9_.\-/]+)/g, (m, name: string) => {
+  // Build the editor's initial content ONCE per mount: asset://name -> blob URL.
+  //
+  // The editor is intentionally UNCONTROLLED (initialValue, not value): edits flow
+  // OUT via onEditorChange -> onChange (updating parent state for autosave/export),
+  // but parent state is never fed back INTO TinyMCE. Driving it as a controlled
+  // component re-generated fresh blob URLs on every value change, which made TinyMCE
+  // re-fire onEditorChange, whose normalized output never equalled `value` — an
+  // infinite loop ("Maximum update depth exceeded"). Switching to a different block
+  // remounts this component via a React key (see BlockEditor), reloading its HTML.
+  const initialHtmlRef = useRef<string | null>(null);
+  if (initialHtmlRef.current === null) {
+    initialHtmlRef.current = value.replace(ASSET_RE, (m, name: string) => {
       const a = assets.get(name);
       if (!a) return m;
       const url = URL.createObjectURL(a.blob);
-      map.set(url, name);
-      created.push(url);
+      blobToName.current.set(url, name);
+      createdUrls.current.push(url);
       return url;
     });
-    setDisplayHtml(next);
+  }
+
+  // Revoke every blob URL we created when the editor unmounts.
+  useEffect(() => {
+    const urls = createdUrls.current;
+    const map = blobToName.current;
     return () => {
-      for (const u of created) {
-        URL.revokeObjectURL(u);
-        map.delete(u);
-      }
+      for (const u of urls) URL.revokeObjectURL(u);
+      map.clear();
+      urls.length = 0;
     };
-  }, [value, assets]);
+  }, []);
 
   const handleChange = (html: string) => {
     const out = html.replace(/blob:[^\s"')]+/g, (url) => {
@@ -66,6 +78,7 @@ export function RichEditor({ value, onChange, height = 420, assets, onAddAsset }
         const stored = onAddAsset(realFile, fname);
         const url = URL.createObjectURL(realFile);
         blobToName.current.set(url, stored);
+        createdUrls.current.push(url);
         resolve(url);
       } catch (e) {
         reject(e instanceof Error ? e.message : String(e));
@@ -79,7 +92,7 @@ export function RichEditor({ value, onChange, height = 420, assets, onAddAsset }
       onInit={(_e, editor) => {
         editorRef.current = editor;
       }}
-      value={displayHtml}
+      initialValue={initialHtmlRef.current}
       onEditorChange={handleChange}
       init={{
         height,
