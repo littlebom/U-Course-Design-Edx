@@ -19,8 +19,8 @@ interface NavItem {
 }
 
 const ITEMS: NavItem[] = [
-  { href: "/courses", label: "คอร์ส", icon: BookOpen },
-  { href: "/libraries", label: "คลังเนื้อหา", icon: FolderOpen },
+  { href: "/courses", label: "Course", icon: BookOpen },
+  { href: "/libraries", label: "Library", icon: FolderOpen },
   { href: "/admin/users", label: "จัดการผู้ใช้", icon: Users, adminOnly: true },
 ];
 
