@@ -1,84 +1,67 @@
 "use client";
 
+import { useState } from "react";
+import { Pencil, HelpCircle } from "lucide-react";
 import type { ProblemBlock } from "@/lib/schema";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import type { BlockUpdateFn } from "./types";
-import { ChoiceList } from "./problem/ChoiceList";
-import { NumericalFields } from "./problem/NumericalFields";
-import { TextFields } from "./problem/TextFields";
-import { AdvancedSettings } from "./problem/AdvancedSettings";
+import { ProblemEditorModal } from "./problem/ProblemEditorModal";
 
-type ProblemKind = ProblemBlock["problemType"];
+const TYPE_LABEL: Record<ProblemBlock["problemType"], string> = {
+  multiplechoice: "เลือก 1 ข้อ",
+  checkbox: "เลือกหลายข้อ",
+  dropdown: "Dropdown",
+  numerical: "ตัวเลข",
+  text: "ข้อความ",
+};
 
-// Top-level Problem editor. Picks the right field component per problemType
-// and seeds the kind-specific fields when the user switches type so we don't
-// flash validation errors. Kind-specific UIs live in ./problem/*.
+function stripTags(s: string): string {
+  return s.replace(/<[^>]+>/g, "").trim();
+}
+
+function answerSummary(block: ProblemBlock): string {
+  if (block.problemType === "numerical") {
+    return `คำตอบ = ${block.numericalAnswer ?? "-"}${block.numericalTolerance && block.numericalTolerance !== "0" ? ` ± ${block.numericalTolerance}` : ""}`;
+  }
+  if (block.problemType === "text") {
+    const n = (block.textAnswers ?? []).filter((a) => a.trim()).length;
+    return `${n} คำตอบที่ยอมรับ`;
+  }
+  const choices = block.choices ?? [];
+  const correct = choices.filter((c) => c.correct).length;
+  return `${choices.length} ตัวเลือก · ถูก ${correct}`;
+}
+
+// Inline problem "card" shown in the block editor panel: a compact summary plus
+// an Edit button that opens the full-screen Open edX–style ProblemEditorModal.
+// All real editing happens in the modal (same data + export path).
 export function ProblemFields({ block, update }: { block: ProblemBlock; update: BlockUpdateFn }) {
+  const [open, setOpen] = useState(false);
   const setProblem = (mut: (p: ProblemBlock) => void) => update((b) => mut(b as ProblemBlock));
 
-  const setKind = (kind: ProblemKind) => setProblem((p) => {
-    p.problemType = kind;
-    if (kind === "multiplechoice" || kind === "checkbox" || kind === "dropdown") {
-      if (!p.choices || p.choices.length < 2) {
-        p.choices = [
-          { text: "ตัวเลือก 1", correct: true },
-          { text: "ตัวเลือก 2", correct: false },
-        ];
-      }
-    } else if (kind === "numerical") {
-      if (p.numericalAnswer == null) p.numericalAnswer = 0;
-      if (p.numericalTolerance == null) p.numericalTolerance = "0";
-    } else if (kind === "text") {
-      if (!p.textAnswers || p.textAnswers.length === 0) p.textAnswers = [""];
-      if (!p.textMatchMode) p.textMatchMode = "exact";
-    }
-  });
-
-  const isChoiceBased = block.problemType === "multiplechoice"
-    || block.problemType === "checkbox"
-    || block.problemType === "dropdown";
+  const preview = stripTags(block.question) || "(ยังไม่มีคำถาม)";
 
   return (
-    <>
-      <div className="space-y-1.5">
-        <Label>ประเภท</Label>
-        <Tabs value={block.problemType} onValueChange={(v) => setKind(v as ProblemKind)}>
-          <TabsList className="bg-default-100 !gap-1 !p-1 flex-wrap">
-            <TabsTrigger value="multiplechoice" className="!px-3 !text-xs">เลือก 1 ข้อ</TabsTrigger>
-            <TabsTrigger value="checkbox" className="!px-3 !text-xs">เลือกหลายข้อ</TabsTrigger>
-            <TabsTrigger value="dropdown" className="!px-3 !text-xs">Dropdown</TabsTrigger>
-            <TabsTrigger value="numerical" className="!px-3 !text-xs">ตัวเลข</TabsTrigger>
-            <TabsTrigger value="text" className="!px-3 !text-xs">ข้อความ</TabsTrigger>
-          </TabsList>
-        </Tabs>
+    <div className="space-y-3">
+      <div className="rounded-xl border border-default-200 bg-default-50 p-4">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+            <HelpCircle size={12} /> {TYPE_LABEL[block.problemType]}
+          </span>
+          <span className="text-xs text-default-500">{answerSummary(block)}</span>
+          <span className="text-xs text-default-400">· Weight {block.weight ?? 1}</span>
+          <span className="text-xs text-default-400">· Attempts {block.maxAttempts ?? 1}</span>
+        </div>
+        <p className="line-clamp-3 text-sm text-default-700">{preview}</p>
       </div>
 
-      <div className="space-y-1.5">
-        <Label>คำถาม (HTML)</Label>
-        <Textarea
-          rows={3}
-          className="!font-mono !text-xs"
-          value={block.question}
-          onChange={(e) => setProblem((p) => (p.question = e.target.value))}
-        />
-      </div>
+      <Button color="primary" className="w-full" onClick={() => setOpen(true)}>
+        <Pencil size={14} className="me-1.5" /> แก้ไข Problem (Open edX)
+      </Button>
 
-      {isChoiceBased && <ChoiceList block={block} setProblem={setProblem} />}
-      {block.problemType === "numerical" && <NumericalFields block={block} setProblem={setProblem} />}
-      {block.problemType === "text" && <TextFields block={block} setProblem={setProblem} />}
-
-      <div className="space-y-1.5">
-        <Label>คำอธิบายเฉลย (Solution)</Label>
-        <Textarea
-          rows={2}
-          value={block.explanation ?? ""}
-          onChange={(e) => setProblem((p) => (p.explanation = e.target.value || undefined))}
-        />
-      </div>
-
-      <AdvancedSettings block={block} setProblem={setProblem} />
-    </>
+      {open && (
+        <ProblemEditorModal block={block} setProblem={setProblem} onClose={() => setOpen(false)} />
+      )}
+    </div>
   );
 }
