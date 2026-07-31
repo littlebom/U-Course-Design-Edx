@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Library as LibIcon, Download, Info, FolderTree, FolderOpen, ImageIcon, Share2, MoreHorizontal, Upload, Combine } from "lucide-react";
+import { Library as LibIcon, Download, Info, FolderTree, FolderOpen, ImageIcon, Share2, MoreHorizontal, Upload, Combine, ChevronDown, Package, FileArchive } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CollectionEditor } from "@/components/CollectionEditor";
@@ -24,6 +24,7 @@ import type {
 } from "@/lib/library/schema";
 import { isContainer } from "@/lib/library/schema";
 import { downloadLibraryZip } from "@/lib/library/export";
+import { downloadLibraryV1TarGz } from "@/lib/library/export-v1";
 import { parseLibraryV1Tar } from "@/lib/library/import-v1";
 import { uuidV4 } from "@/lib/uuid";
 import { checkLibraryReadiness } from "@/lib/library/readiness";
@@ -134,7 +135,17 @@ export default function LibraryEditorPage() {
     if (!library) return;
     const warnings = await downloadLibraryZip(library, assets);
     if (warnings.length > 0) {
-      alert(`Export สำเร็จ — มีคำเตือน ${warnings.length} รายการ:\n\n${warnings.join("\n")}`);
+      alert(`Export V2 สำเร็จ — มีคำเตือน ${warnings.length} รายการ:\n\n${warnings.join("\n")}`);
+    }
+  };
+
+  // Export as legacy Content Library v1 (.tar.gz) — for Open edX instances
+  // (e.g. Redwood) that still use v1 libraries for randomized problem banks.
+  const handleExportV1 = async () => {
+    if (!library) return;
+    const warnings = await downloadLibraryV1TarGz(library, assets);
+    if (warnings.length > 0) {
+      alert(`Export V1 สำเร็จ — มีคำเตือน ${warnings.length} รายการ:\n\n${warnings.join("\n")}`);
     }
   };
 
@@ -184,7 +195,7 @@ export default function LibraryEditorPage() {
         hideModeNav
         showBackToCourses
         backHref="/libraries"
-        backLabel="คลังเนื้อหา"
+        backLabel="Library"
         brand={
           <button
             type="button"
@@ -216,9 +227,26 @@ export default function LibraryEditorPage() {
             <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
               <Share2 size={14} className="me-1.5" /> แชร์
             </Button>
-            <Button color="primary" size="sm" onClick={handleExport}>
-              <Download size={14} className="me-1.5" /> Export .zip
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button color="primary" size="sm">
+                  <Download size={14} className="me-1.5" /> Export
+                  <ChevronDown size={13} className="ms-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuItem onClick={handleExport}>
+                  <FileArchive size={13} className="me-2 text-default-500" />
+                  <span className="flex-1">Export V2 (.zip)</span>
+                  <span className="text-[10px] text-default-400">Learning Core</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportV1}>
+                  <Package size={13} className="me-2 text-default-500" />
+                  <span className="flex-1">Export V1 (.tar.gz)</span>
+                  <span className="text-[10px] text-default-400">Legacy · Redwood</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" title="เพิ่มเติม" aria-label="เพิ่มเติม" className="!px-2">
